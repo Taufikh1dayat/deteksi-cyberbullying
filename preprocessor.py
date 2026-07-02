@@ -4,28 +4,16 @@ from Sastrawi.Stemmer.StemmerFactory import StemmerFactory
 from Sastrawi.StopWordRemover.StopWordRemoverFactory import StopWordRemoverFactory
 from tqdm import tqdm
 
-print("--- MEMULAI FASE 1: BULK PREPROCESSING ---")
-
-# 1. Memuat Data Utama
-print("Memuat dataset utama...")
-df = pd.read_csv("data.csv", encoding='latin-1')
-
-# 2. Menyederhanakan Label (Binary Classification: Cyberbullying vs Aman)
-# Jika HS == 1 ATAU Abusive == 1, maka Label = 1. Jika tidak, 0.
-df['Label'] = ((df['HS'] == 1) | (df['Abusive'] == 1)).astype(int)
-
-# 3. Memuat Kamus Alay (Slang Dictionary)
-print("Memuat Kamus Bahasa Gaul (Alay)...")
+# ── 📦 RELEVANSI GLOBAL (Dipakai Bersama oleh Dashboard & Training) ──────────
+# Komponen di bawah ini tetap dimuat di luar agar bisa dipinjam langsung oleh app.py
 kamus_alay = pd.read_csv("new_kamusalay.csv", encoding='latin-1', header=None)
-# Mengubah tabel kamus menjadi format dictionary Python { 'kata_alay': 'kata_baku' }
 alay_dict = dict(zip(kamus_alay[0], kamus_alay[1]))
 
-# 4. Inisialisasi Sastrawi
-print("Menyiapkan mesin NLP Sastrawi (Tunggu sebentar)...")
 stopword_remover = StopWordRemoverFactory().create_stop_word_remover()
 stemmer = StemmerFactory().create_stemmer()
 
-# 5. Fungsi Pembersih Super (Termasuk Normalisasi Bahasa Gaul)
+
+# ── 🧼 FUNGSI PEMBERSIH SUPER (Mesin Utama) ──────────────────────────────────
 def cuci_teks_super(teks_mentah):
     # Case Folding
     teks = str(teks_mentah).lower() 
@@ -47,19 +35,29 @@ def cuci_teks_super(teks_mentah):
     teks = stopword_remover.remove(teks)
     
     # Stemming
-    teks_bersih = stemmer.stem(teks)
+    teks_clean = stemmer.stem(teks)
     
-    return teks_bersih
+    return teks_clean
 
-# ==========================================
-# 6. EKSEKUSI MASSAL
-# ==========================================
-# Pastikan gerbang ini berada di paling kiri (tanpa spasi awal)
+
+# ==============================================================================
+# 🎯 GERBANG ISOLASI EKSEKUSI MASSAL
+# ==============================================================================
+# Bagian di bawah ini HANYA akan aktif jika kamu menjalankan perintah 'python preprocessor.py'.
+# Dashboard Streamlit (app.py) secara mutlak TIDAK AKAN PERNAH membaca atau mengeksekusi area ini.
 if __name__ == "__main__":
-    print("\nMemulai pencucian belasan ribu data. Proses ini bisa memakan waktu 30 menit - 2 Jam.")
-    print("Perhatikan Progress Bar di bawah ini:")
+    print("\n=======================================================")
+    print("🚀 MEMULAI FASE 1: BULK PREPROCESSING DATASET TRAINING")
+    print("=======================================================")
+    
+    # Memuat berkas training lama
+    print("Memuat dataset utama (data.csv)...")
+    df = pd.read_csv("data.csv", encoding='latin-1')
 
-    # SEMUA baris di bawah ini WAJIB menjorok 1 TAB / 4 SPASI ke kanan
+    # Menyederhanakan Label (Binary Classification: Cyberbullying vs Aman)
+    df['Label'] = ((df['HS'] == 1) | (df['Abusive'] == 1)).astype(int)
+
+    print("\nMencuci belasan ribu data training. Perhatikan progress bar di bawah:")
     tqdm.pandas(desc="Mencuci Teks")
 
     # Menerapkan fungsi ke seluruh baris
@@ -68,12 +66,9 @@ if __name__ == "__main__":
     # Memilih kolom yang penting saja untuk disimpan
     df_final = df[['Tweet', 'Teks_Bersih', 'Label']]
 
-    # ==========================================
-    # 7. MENYIMPAN HASIL FINAL (Sekarang aman di dalam gerbang)
-    # ==========================================
+    # Menulis ulang file csv hasil training tanpa merusak berkas lain
     nama_file_final = "dataset_siap_training.csv"
     df_final.to_csv(nama_file_final, index=False)
 
-    print(f"\n--- PREPROCESSING SELESAI! ---")
-    print(f"Data bersih berhasil diamankan ke file: '{nama_file_final}'")
-
+    print(f"\n--- BULK PREPROCESSING SELESAI! ---")
+    print(f"Data bersih eksperimen berhasil disimpan ke: '{nama_file_final}'")

@@ -3,7 +3,8 @@ import pandas as pd
 
 # ── 🔑 CONFIGURATION ──────────────────────────────────────────────────
 # Menggunakan token resmi Azz Personal (Pastikan berakhiran angka 0)
-APIFY_TOKEN = "apify_api_50ZAtK7h0wDuY7KcsnVggZadCa7fN31Qws9O"
+#api cadangan: apify_api_q3nNYYTSSPwAk2aRpmqmhwes6iioc4158Fql
+APIFY_TOKEN = "apify_api_q3nNYYTSSPwAk2aRpmqmhwes6iioc4158Fql"
 # ──────────────────────────────────────────────────────────────────────
 
 def scrape_tweets_apify(query: str, max_results: int = 10) -> pd.DataFrame:
