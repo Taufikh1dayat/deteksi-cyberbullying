@@ -3,6 +3,10 @@ import pandas as pd
 import pickle
 import os
 import importlib
+import json
+import hashlib
+import requests
+from pathlib import Path
 
 # ── 🔄 ANTI-CACHE MECHANISM ──────────────────────────────────────────────────
 import scraper_apify
@@ -21,6 +25,58 @@ st.set_page_config(
     page_icon="📊",
     layout="wide"
 )
+
+# ── 💾 DYNAMIC CACHE & OPENROUTER CONFIGURATION ──────────────────────────────
+CACHE_FILE = Path("gemini_cache.json")
+
+# 📌 TEMPELKAN API KEY OPENROUTER KAMU DI SINI AGAR BISA MENABUNG OTOMATIS LIVE
+OPENROUTER_API_KEY = "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"
+MODEL_NAME = "tencent/hy3:free"
+
+def muat_cache_disk_lokal() -> dict:
+    """Membaca brankas JSON secara lokal dari harddisk."""
+    if CACHE_FILE.exists():
+        try:
+            return json.loads(CACHE_FILE.read_text(encoding="utf-8"))
+        except Exception:
+            return {}
+    return {}
+
+def simpan_cache_disk_lokal(cache_data: dict):
+    """Menyimpan tabungan narasi baru secara instan ke file JSON."""
+    try:
+        CACHE_FILE.write_text(json.dumps(cache_data, ensure_ascii=False, indent=2), encoding="utf-8")
+    except Exception:
+        pass
+
+def buat_kunci_cache_lokal(tweet: str, model: str, prompt: str) -> str:
+    """Membuat token SHA256 unik untuk sidik jari pencarian data."""
+    gabungan = f"{model}::{tweet}::{prompt}"
+    return hashlib.sha256(gabungan.encode("utf-8")).hexdigest()
+
+def ambil_narasi_openrouter_live(prompt: str) -> str:
+    """Menembak OpenRouter Cloud secara otomatis saat terjadi Cache Miss."""
+    if not OPENROUTER_API_KEY or "GANTI_DENGAN" in OPENROUTER_API_KEY:
+        raise ValueError("API Key OpenRouter belum dikonfigurasi di dalam app.py")
+        
+    url = "https://openrouter.ai/api/v1/chat/completions"
+    headers = {
+        "Authorization": f"Bearer {OPENROUTER_API_KEY}",
+        "Content-Type": "application/json",
+        "HTTP-Referer": "http://localhost:8501",
+        "X-Title": "Twitter Sentiment Live Hybrid"
+    }
+    payload = {
+        "model": MODEL_NAME,
+        "messages": [{"role": "user", "content": prompt}]
+    }
+    
+    response = requests.post(url, headers=headers, json=payload, timeout=15)
+    if response.status_code == 200:
+        data = response.json()
+        return data['choices'][0]['message']['content'].strip()
+    else:
+        raise RuntimeError(f"Server Cloud Error (Code: {response.status_code})")
 
 # ── 📦 UNPICKLE ML COMPONENTS ────────────────────────────────────────────────
 @st.cache_resource
@@ -47,22 +103,7 @@ except Exception as e:
     st.error(f"⚠️ Gagal load file .pkl! Detail: {e}")
     model_ready = False
 
-# ── 🤖 ENGINES GEMINI DENGAN ARSITEKTUR KETAHANAN TINGGI ─────────────────────
-@st.cache_data(show_spinner=False, ttl=3600)
-def panggil_gemini_api_cached(prompt, api_key):
-    import requests
-    url = f"https://generativelanguage.googleapis.com/v1/models/gemini-2.0-flash:generateContent?key={api_key}"
-    headers = {"Content-Type": "application/json"}
-    payload = {"contents": [{"parts": [{"text": prompt}]}]}
-    
-    res = requests.post(url, headers=headers, json=payload, timeout=10)
-    if res.status_code == 200:
-        res_data = res.json()
-        return res_data['candidates'][0]['content']['parts'][0]['text'].strip()
-    else:
-        raise Exception("API_LIMIT_REACHED")
-
-# Fungsi kustom untuk merangkai teks pakar jika kuota cloud jebol
+# ── 🛠️ ENGINE FALLBACK LOKAL (Lapis Pengaman Ke-3) ───────────────────────────
 def buat_analisis_forensik_lokal(teks, label, bobot_list):
     try:
         kata_top = [f"'{item[0]}'" for item in bobot_list[:2]]
@@ -81,7 +122,7 @@ st.title("📊 Dashboard Sentimen Real-time Analisis Twitter")
 st.subheader("Komparasi Algoritma SVM & Naive Bayes dengan Pendekatan XAI (LIME)")
 st.markdown("---")
 
-# ── 🏆 TAHAP 1: VISUALISASI METRIK EVALUASI MODEL KUSTOM ──────────────────────
+# ── 🏆 VISUALISASI METRIK EVALUASI MODEL KUSTOM ──────────────────────
 with st.expander("🏆 Kinerja & Metrik Evaluasi Komparasi Model (Hasil Pelatihan)", expanded=True):
     st.markdown("""
         <p style='color: #a0aec0; font-size: 14px; margin-bottom: 25px;'>
@@ -93,7 +134,7 @@ with st.expander("🏆 Kinerja & Metrik Evaluasi Komparasi Model (Hasil Pelatiha
     with kolom_kiri:
         st.markdown("""
             <div style='background-color: #151922; border-left: 5px solid #4FFFB0; border-radius: 8px; padding: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.3);'>
-                <h4 style='margin-top: 0; color: #4FFFB0; font-family: sans-serif; display: flex; align-items: center; gap: 8px;'>🛡️ Support Vector Machine (SVM)</h4>
+                <h4 style='margin-top: 0; color: #4FFFB0; font-family: sans-serif;'>🛡️ Support Vector Machine (SVM)</h4>
                 <div style='display: flex; gap: 12px; justify-content: space-between; margin-top: 15px;'>
                     <div style='background: #1e2330; padding: 10px; border-radius: 6px; flex: 1; text-align: center;'>
                         <span style='font-size: 11px; color: #a0aec0; text-transform: uppercase;'>Accuracy</span>
@@ -119,7 +160,7 @@ with st.expander("🏆 Kinerja & Metrik Evaluasi Komparasi Model (Hasil Pelatiha
     with kolom_kanan:
         st.markdown("""
             <div style='background-color: #151922; border-left: 5px solid #FF4F4F; border-radius: 8px; padding: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.3);'>
-                <h4 style='margin-top: 0; color: #FF4F4F; font-family: sans-serif; display: flex; align-items: center; gap: 8px;'>📊 Multinomial Naïve Bayes</h4>
+                <h4 style='margin-top: 0; color: #FF4F4F; font-family: sans-serif;'>📊 Multinomial Naïve Bayes</h4>
                 <div style='display: flex; gap: 12px; justify-content: space-between; margin-top: 15px;'>
                     <div style='background: #1e2330; padding: 10px; border-radius: 6px; flex: 1; text-align: center;'>
                         <span style='font-size: 11px; color: #a0aec0; text-transform: uppercase;'>Accuracy</span>
@@ -220,93 +261,7 @@ if st.session_state.df_master is not None:
                 bobot_features = exp_svm.as_list()
                 probabilitas = predict_proba_svm([teks_target])[0]
                 prob_aman, prob_cyber = probabilitas[0], probabilitas[1]
-
-            st.markdown(f"""
-                <div style="display: flex; gap: 15px; margin-bottom: 25px; margin-top: 10px;">
-                    <div style="flex: 1; background: #151922; padding: 15px; border-radius: 8px; border-left: 4px solid #4FFFB0; box-shadow: 0 4px 6px rgba(0,0,0,0.2);">
-                        <span style="color: #a0aec0; font-size: 11px; text-transform: uppercase; font-weight: bold;">Probabilitas Aman</span>
-                        <div style="font-size: 26px; font-weight: bold; color: #4FFFB0; margin-top: 5px;">{prob_aman*100:.2f}%</div>
-                    </div>
-                    <div style="flex: 1; background: #151922; padding: 15px; border-radius: 8px; border-left: 4px solid #FF4F4F; box-shadow: 0 4px 6px rgba(0,0,0,0.2);">
-                        <span style="color: #a0aec0; font-size: 11px; text-transform: uppercase; font-weight: bold;">Probabilitas Cyberbullying</span>
-                        <div style="font-size: 26px; font-weight: bold; color: #FF4F4F; margin-top: 5px;">{prob_cyber*100:.2f}%</div>
-                    </div>
-                </div>
-            """, unsafe_allow_html=True)
-            
-            col_grafik, col_teks = st.columns([4, 6])
-            with col_grafik:
-                st.markdown("<p style='color: #a0aec0; font-size: 13px; font-weight: bold; margin-bottom: 15px;'>📊 Kontribusi 5 Fitur Kata Teratas (SVM):</p>", unsafe_allow_html=True)
-                for kata, bobot in bobot_features:
-                    lebar_bar = min(abs(bobot) * 500, 100)
-                    warna_bar = "#FF4F4F" if bobot > 0 else "#4FFFB0"
-                    st.markdown(f"""
-                        <div style='display: flex; align-items: center; margin-bottom: 12px; background-color: #151922; padding: 12px; border-radius: 6px;'>
-                            <div style='width: 100px; font-weight: bold; color: #ffffff; font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;'>{kata}</div>
-                            <div style='flex-grow: 1; background-color: #1e2330; border-radius: 4px; height: 14px; margin: 0 12px; overflow: hidden;'>
-                                <div style='background-color: {warna_bar}; width: {lebar_bar}%; height: 100%; border-radius: 4px;'></div>
-                            </div>
-                            <div style='width: 65px; text-align: right; color: {warna_bar}; font-family: monospace; font-weight: bold; font-size: 13px;'>{bobot:+.4f}</div>
-                        </div>
-                    """, unsafe_allow_html=True)
-                    
-            with col_teks:
-                st.markdown("<p style='color: #a0aec0; font-size: 13px; font-weight: bold; margin-bottom: 15px;'>📝 Konteks Penyorotan Kata (Linguistik Forensik):</p>", unsafe_allow_html=True)
-                words = teks_target.split()
-                highlighted_html = ""
-                feature_dict = {k.lower(): b for k, b in bobot_features}
-                
-                for word in words:
-                    clean_word = word.strip(".,;:!?\"'()[]{}—-_").lower()
-                    if clean_word in feature_dict:
-                        w = feature_dict[clean_word]
-                        bg = "rgba(255, 79, 79, 0.25)" if w > 0 else "rgba(79, 255, 176, 0.25)"
-                        lbl_color = "#FF4F4F" if w > 0 else "#4FFFB0"
-                        highlighted_html += f'<span style="background-color: {bg}; border: 1px solid {lbl_color}; padding: 2px 6px; border-radius: 4px; display: inline-block; margin: 2px 1px; color: #ffffff; font-weight: bold; font-size: 14px;">{word}</span> '
-                    else:
-                        highlighted_html += f'<span style="color: #e2e8f0; display: inline-block; margin: 2px 1px; font-size: 14px;">{word}</span> '
-                        
-                st.markdown(f"""
-                    <div style="background-color: #151922; padding: 20px; border-radius: 8px; min-height: 165px; border: 1px solid #1e2330; line-height: 2; box-shadow: 0 4px 6px rgba(0,0,0,0.2);">
-                        {highlighted_html}
-                    </div>
-                """, unsafe_allow_html=True)
-
-            st.markdown("<br>", unsafe_allow_html=True)
-            str_bobot = ", ".join([f"'{k}' ({b:+.4f})" for k, b in bobot_features])
-            label_prediksi = "Cyberbullying" if prob_cyber > prob_aman else "Aman"
-            
-            prompt_skenario = f"""
-            Teks Cuitan Konten: "{teks_target}"
-            Model Klasifikasi: Support Vector Machine (SVM)
-            Hasil Prediksi Akhir: [{label_prediksi}]
-            Nilai Key-Features LIME: {str_bobot}
-            
-            Tugas Anda:
-            Bertindaklah sebagai pakar Linguistik Forensik Siber. Jelaskan dalam 2 atau 3 kalimat santun bahasa Indonesia, 
-            bagaimana keterkaitan makna antar kata kunci berbobot ekstrem di atas sehingga mendorong model SVM memutuskan 
-            bahwa tweet ini termasuk kategori {label_prediksi}. Buat penjelasan yang logis untuk orang awam.
-            """
-            
-            # ── 🛡️ BLOCK AUTOMATIC FALLBACK ENGINE (SVM) ──
-            try:
-                with st.spinner("Gemini AI sedang menelaah relasi semantik kata..."):
-                    key_sekarang = "AIzaSyBnBILSGW51P3Fo8VOkMMWdwhKfgfmiemI"
-                    gemini_text = panggil_gemini_api_cached(prompt_skenario, key_sekarang)
-                    label_header = "🤖 Interpretasi Contextual Gen-AI Layer (SVM)"
-            except Exception:
-                # Jika Google memblokir (429), jalankan generator teks lokal seketika
-                gemini_text = buat_analisis_forensik_lokal(teks_target, label_prediksi, bobot_features)
-                label_header = "🤖 Interpretasi Kontekstual Expert Engine (SVM Hybrid)"
-                
-            st.markdown(f"""
-                <div style='background-color: #111622; border-left: 5px solid #4FFFB0; padding: 18px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); margin-top: 15px;'>
-                    <p style='margin: 0; color: #4FFFB0; font-size: 12px; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px;'>{label_header}</p>
-                    <p style='margin: 0; color: #e2e8f0; font-size: 14px; line-height: 1.6; font-family: sans-serif; font-style: italic;'>
-                        "{gemini_text}"
-                    </p>
-                </div>
-            """, unsafe_allow_html=True)
+                warna_bar = "#4FFFB0"
 
         # Kondisi B: Render REKONSTRUKSI VISUAL UNTUK NAÏVE BAYES
         else:
@@ -322,95 +277,109 @@ if st.session_state.df_master is not None:
                 bobot_features = exp_nb.as_list()
                 probabilitas = predict_proba_nb([teks_target])[0]
                 prob_aman, prob_cyber = probabilitas[0], probabilitas[1]
+                warna_bar = "#FF4F4F"
 
-            st.markdown(f"""
-                <div style="display: flex; gap: 15px; margin-bottom: 25px; margin-top: 10px;">
-                    <div style="flex: 1; background: #151922; padding: 15px; border-radius: 8px; border-left: 4px solid #4FFFB0; box-shadow: 0 4px 6px rgba(0,0,0,0.2);">
-                        <span style="color: #a0aec0; font-size: 11px; text-transform: uppercase; font-weight: bold;">Probabilitas Aman</span>
-                        <div style="font-size: 26px; font-weight: bold; color: #4FFFB0; margin-top: 5px;">{prob_aman*100:.2f}%</div>
-                    </div>
-                    <div style="flex: 1; background: #151922; padding: 15px; border-radius: 8px; border-left: 4px solid #FF4F4F; box-shadow: 0 4px 6px rgba(0,0,0,0.2);">
-                        <span style="color: #a0aec0; font-size: 11px; text-transform: uppercase; font-weight: bold;">Probabilitas Cyberbullying</span>
-                        <div style="font-size: 26px; font-weight: bold; color: #FF4F4F; margin-top: 5px;">{prob_cyber*100:.2f}%</div>
-                    </div>
+        label_prediksi = "Cyberbullying" if prob_cyber > prob_aman else "Aman"
+
+        # 📊 SCORECARD PROBABILITAS KUSTOM
+        st.markdown(f"""
+            <div style="display: flex; gap: 15px; margin-bottom: 25px; margin-top: 10px;">
+                <div style="flex: 1; background: #151922; padding: 15px; border-radius: 8px; border-left: 4px solid #4FFFB0; box-shadow: 0 4px 6px rgba(0,0,0,0.2);">
+                    <span style="color: #a0aec0; font-size: 11px; text-transform: uppercase; font-weight: bold;">Probabilitas Aman</span>
+                    <div style="font-size: 26px; font-weight: bold; color: #4FFFB0; margin-top: 5px;">{prob_aman*100:.2f}%</div>
                 </div>
-            """, unsafe_allow_html=True)
-            
-            col_grafik, col_teks = st.columns([4, 6])
-            with col_grafik:
-                st.markdown("<p style='color: #a0aec0; font-size: 13px; font-weight: bold; margin-bottom: 15px;'>📊 Kontribusi 5 Fitur Kata Teratas (Naïve Bayes):</p>", unsafe_allow_html=True)
-                for kata, bobot in bobot_features:
-                    lebar_bar = min(abs(bobot) * 500, 100)
-                    warna_bar = "#FF4F4F" if bobot > 0 else "#4FFFB0"
-                    st.markdown(f"""
-                        <div style='display: flex; align-items: center; margin-bottom: 12px; background-color: #151922; padding: 12px; border-radius: 6px;'>
-                            <div style='width: 100px; font-weight: bold; color: #ffffff; font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;'>{kata}</div>
-                            <div style='flex-grow: 1; background-color: #1e2330; border-radius: 4px; height: 14px; margin: 0 12px; overflow: hidden;'>
-                                <div style='background-color: {warna_bar}; width: {lebar_bar}%; height: 100%; border-radius: 4px;'></div>
-                            </div>
-                            <div style='width: 65px; text-align: right; color: {warna_bar}; font-family: monospace; font-weight: bold; font-size: 13px;'>{bobot:+.4f}</div>
-                        </div>
-                    """, unsafe_allow_html=True)
-                    
-            with col_teks:
-                st.markdown("<p style='color: #a0aec0; font-size: 13px; font-weight: bold; margin-bottom: 15px;'>📝 Konteks Penyorotan Kata (Linguistik Forensik):</p>", unsafe_allow_html=True)
-                words = teks_target.split()
-                highlighted_html = ""
-                feature_dict = {k.lower(): b for k, b in bobot_features}
-                
-                for word in words:
-                    clean_word = word.strip(".,;:!?\"'()[]{}—-_").lower()
-                    if clean_word in feature_dict:
-                        w = feature_dict[clean_word]
-                        bg = "rgba(255, 79, 79, 0.25)" if w > 0 else "rgba(79, 255, 176, 0.25)"
-                        lbl_color = "#FF4F4F" if w > 0 else "#4FFFB0"
-                        highlighted_html += f'<span style="background-color: {bg}; border: 1px solid {lbl_color}; padding: 2px 6px; border-radius: 4px; display: inline-block; margin: 2px 1px; color: #ffffff; font-weight: bold; font-size: 14px;">{word}</span> '
-                    else:
-                        highlighted_html += f'<span style="color: #e2e8f0; display: inline-block; margin: 2px 1px; font-size: 14px;">{word}</span> '
-                        
+                <div style="flex: 1; background: #151922; padding: 15px; border-radius: 8px; border-left: 4px solid #FF4F4F; box-shadow: 0 4px 6px rgba(0,0,0,0.2);">
+                    <span style="color: #a0aec0; font-size: 11px; text-transform: uppercase; font-weight: bold;">Probabilitas Cyberbullying</span>
+                    <div style="font-size: 26px; font-weight: bold; color: #FF4F4F; margin-top: 5px;">{prob_cyber*100:.2f}%</div>
+                </div>
+            </div>
+        """, unsafe_allow_html=True)
+        
+        # 📊 RENDERING GRID INTERAKTIF LIME
+        col_grafik, col_teks = st.columns([4, 6])
+        with col_grafik:
+            st.markdown(f"<p style='color: #a0aec0; font-size: 13px; font-weight: bold; margin-bottom: 15px;'>📊 Kontribusi 5 Fitur Kata Teratas:</p>", unsafe_allow_html=True)
+            for kata, bobot in bobot_features:
+                lebar_bar = min(abs(bobot) * 500, 100)
+                warna_kontribusi = "#FF4F4F" if bobot > 0 else "#4FFFB0"
                 st.markdown(f"""
-                    <div style="background-color: #151922; padding: 20px; border-radius: 8px; min-height: 165px; border: 1px solid #1e2330; line-height: 2; box-shadow: 0 4px 6px rgba(0,0,0,0.3); font-style: normal;">
-                        {highlighted_html}
+                    <div style='display: flex; align-items: center; margin-bottom: 12px; background-color: #151922; padding: 12px; border-radius: 6px;'>
+                        <div style='width: 100px; font-weight: bold; color: #ffffff; font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;'>{kata}</div>
+                        <div style='flex-grow: 1; background-color: #1e2330; border-radius: 4px; height: 14px; margin: 0 12px; overflow: hidden;'>
+                            <div style='background-color: {warna_kontribusi}; width: {lebar_bar}%; height: 100%; border-radius: 4px;'></div>
+                        </div>
+                        <div style='width: 65px; text-align: right; color: {warna_kontribusi}; font-family: monospace; font-weight: bold; font-size: 13px;'>{bobot:+.4f}</div>
                     </div>
                 """, unsafe_allow_html=True)
-
-            st.markdown("<br>", unsafe_allow_html=True)
-            str_bobot = ", ".join([f"'{k}' ({b:+.4f})" for k, b in bobot_features])
-            label_prediksi = "Cyberbullying" if prob_cyber > prob_aman else "Aman"
-            
-            prompt_skenario = f"""
-            Teks Cuitan Konten: "{teks_target}"
-            Model Klasifikasi: Multinomial Naïve Bayes
-            Hasil Prediksi Akhir: [{label_prediksi}]
-            Nilai Key-Features LIME: {str_bobot}
-            
-            Tugas Anda:
-            Bertindaklah sebagai pakar Linguistik Forensik Siber. Jelaskan dalam 2 or 3 kalimat santun bahasa Indonesia, 
-            bagaimana keterkaitan makna antar kata kunci berbobot ekstrem di atas sehingga mendorong model Naïve Bayes memutuskan 
-            bahwa tweet ini termasuk kategori {label_prediksi}. Buat penjelasan yang logis untuk orang awam.
-            """
-            
-            # ── 📊 BLOCK AUTOMATIC FALLBACK ENGINE (NAÏVE BAYES) ──
-            try:
-                with st.spinner("Gemini AI sedang menelaah relasi semantik kata..."):
-                    key_sekarang = "AIzaSyBnBILSGW51P3Fo8VOkMMWdwhKfgfmiemI"
-                    gemini_text = panggil_gemini_api_cached(prompt_skenario, key_sekarang)
-                    label_header = "🤖 Interpretasi Kontekstual Gen-AI Layer (Naïve Bayes)"
-            except Exception:
-                # Jika Google memblokir (429), jalankan generator teks lokal seketika
-                gemini_text = buat_analisis_forensik_lokal(teks_target, label_prediksi, bobot_features)
-                label_header = "🤖 Interpretasi Kontekstual Expert Engine (Naïve Bayes Hybrid)"
                 
+        with col_teks:
+            st.markdown("<p style='color: #a0aec0; font-size: 13px; font-weight: bold; margin-bottom: 15px;'>📝 Konteks Penyorotan Kata (Linguistik Forensik):</p>", unsafe_allow_html=True)
+            words = teks_target.split()
+            highlighted_html = ""
+            feature_dict = {k.lower(): b for k, b in bobot_features}
+            
+            for word in words:
+                clean_word = word.strip(".,;:!?\"'()[]{}—-_").lower()
+                if clean_word in feature_dict:
+                    w = feature_dict[clean_word]
+                    bg = "rgba(255, 79, 79, 0.25)" if w > 0 else "rgba(79, 255, 176, 0.25)"
+                    lbl_color = "#FF4F4F" if w > 0 else "#4FFFB0"
+                    highlighted_html += f'<span style="background-color: {bg}; border: 1px solid {lbl_color}; padding: 2px 6px; border-radius: 4px; display: inline-block; margin: 2px 1px; color: #ffffff; font-weight: bold; font-size: 14px;">{word}</span> '
+                else:
+                    highlighted_html += f'<span style="color: #e2e8f0; display: inline-block; margin: 2px 1px; font-size: 14px;">{word}</span> '
+                    
             st.markdown(f"""
-                <div style='background-color: #111622; border-left: 5px solid #FF4F4F; padding: 18px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); margin-top: 15px;'>
-                    <p style='margin: 0; color: #FF4F4F; font-size: 12px; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px;'>{label_header}</p>
-                    <p style='margin: 0; color: #e2e8f0; font-size: 14px; line-height: 1.6; font-family: sans-serif; font-style: italic;'>
-                        "{gemini_text}"
-                    </p>
+                <div style="background-color: #151922; padding: 20px; border-radius: 8px; min-height: 165px; border: 1px solid #1e2330; line-height: 2; box-shadow: 0 4px 6px rgba(0,0,0,0.2);">
+                    {highlighted_html}
                 </div>
             """, unsafe_allow_html=True)
+
+        # ── 🛡️ AREA REVISI: DYNAMIC WRITE-THROUGH CACHING LAYER ──────────────────
+        st.markdown("<br>", unsafe_allow_html=True)
+        str_bobot = ", ".join([f"'{k}' ({b:+.4f})" for k, b in bobot_features])
+        
+        prompt_skenario = f"""
+        Teks Cuitan Konten: "{teks_target}"
+        Model Klasifikasi: {pilihan_model}
+        Hasil Prediksi Akhir: [{label_prediksi}]
+        Nilai Key-Features LIME: {str_bobot}
+        Bertindaklah sebagai pakar Linguistik Forensik Siber. Jelaskan dalam 2 atau 3 kalimat santun bahasa Indonesia, 
+        keterkaitan makna kata kunci di atas sehingga memutuskan sebagai {label_prediksi}.
+        """
+        
+        db_cache_lokal = muat_cache_disk_lokal()
+        kunci_pencarian = buat_kunci_cache_lokal(teks_target, pilihan_model, prompt_skenario)
+        
+        # 🏎️ PILAH KONDISI DYNAMIC CACHE
+        if kunci_pencarian in db_cache_lokal:
+            # Skenario 1: Cache Hit (Membaca file lokal super cepat)
+            gemini_text = db_cache_lokal[kunci_pencarian]
+            label_header = f"🤖 Interpretasi Contextual AI Layer ({'SVM' if 'SVM' in pilihan_model else 'Naïve Bayes'} - Cache Hit)"
+        else:
+            # Skenario 2: Cache Miss (Tembak OpenRouter & Langsung Tabung Otomatis ke JSON)
+            try:
+                with st.spinner("⚡ Menghubungi Tencent AI via OpenRouter untuk mengamankan narasi baru..."):
+                    gemini_text = ambil_narasi_openrouter_live(prompt_skenario)
+                
+                # Masukkan ke RAM dan kunci ke Harddisk secara real-time
+                db_cache_lokal[kunci_pencarian] = gemini_text
+                simpan_cache_disk_lokal(db_cache_lokal)
+                label_header = f"🤖 Interpretasi Contextual AI Layer ({'SVM' if 'SVM' in pilihan_model else 'Naïve Bayes'} - Live Saved)"
+            except Exception:
+                # Skenario 3: Fallback Total (Lapis Pengaman jika internet putus/API Key limit)
+                gemini_text = buat_analisis_forensik_lokal(teks_target, label_prediksi, bobot_features)
+                label_header = f"🤖 Interpretasi Kontekstual Expert Engine ({'SVM' if 'SVM' in pilihan_model else 'Naïve Bayes'} - Local Fallback)"
+            
+        # 💡 KOTAK VISUALI INTERVRETED AI
+        st.markdown(f"""
+            <div style='background-color: #111622; border-left: 5px solid {warna_bar}; padding: 22px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.4); margin-top: 20px;'>
+                <p style='margin: 0; color: {warna_bar}; font-size: 14px; font-weight: bold; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 12px;'>
+                    {label_header}
+                </p>
+                <p style='margin: 0; color: #f7fafc; font-size: 17px; line-height: 1.8; font-family: sans-serif; font-style: italic; font-weight: 500;'>
+                    "{gemini_text}"
+                </p>
+            </div>
+        """, unsafe_allow_html=True)
 else:
-    st.write("💡 **Petunjuk Penggunaan:**")
-    st.write("1. Masukkan kata kunci yang ingin kamu teliti di panel sebelah kiri.")
-    st.write("2. Tentukan jumlah tweet yang ingin kamu ambil.")
-    st.write("3. Klik tombol **Tarik Data Real-Time** untuk melihat hasil komparasi ML bekerja!")
+    st.write("💡 **Petunjuk Penggunaan:** Masukkan kata kunci penelitian di panel sebelah kiri lalu klik tombol Tarik Data.")
