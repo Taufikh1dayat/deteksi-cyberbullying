@@ -31,7 +31,9 @@ CACHE_FILE = Path("gemini_cache.json")
 
 # 📌 TEMPELKAN API KEY OPENROUTER KAMU DI SINI AGAR BISA MENABUNG OTOMATIS LIVE
 OPENROUTER_API_KEY = "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"
-MODEL_NAME = "tencent/hy3:free"
+MODEL_NAME = "poolside/Laguna-XS-2.1:free"
+# poolside/Laguna-XS-2.1:free 
+# tencent/hy3:free
 
 def muat_cache_disk_lokal() -> dict:
     """Membaca brankas JSON secara lokal dari harddisk."""
@@ -344,7 +346,7 @@ if st.session_state.df_master is not None:
         Hasil Prediksi Akhir: [{label_prediksi}]
         Nilai Key-Features LIME: {str_bobot}
         Bertindaklah sebagai pakar Linguistik Forensik Siber. Jelaskan dalam 2 atau 3 kalimat santun bahasa Indonesia, 
-        keterkaitan makna kata kunci di atas sehingga memutuskan sebagai {label_prediksi}.
+        keterkaitan makna kata kunci di atas sehingga memutuskan sebagai {label_prediksi} dan sanggah jika terdapat kesalahan.
         """
         
         db_cache_lokal = muat_cache_disk_lokal()
