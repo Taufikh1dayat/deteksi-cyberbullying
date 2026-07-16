@@ -27,7 +27,7 @@ st.set_page_config(
 )
 
 # ── 💾 DYNAMIC CACHE & OPENROUTER CONFIGURATION ──────────────────────────────
-CACHE_FILE = Path("gemini_cache.json")
+CACHE_FILE = Path("ai_cache.json")
 
 # 📌 TEMPELKAN API KEY OPENROUTER KAMU DI SINI AGAR BISA MENABUNG OTOMATIS LIVE
 OPENROUTER_API_KEY = "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"
