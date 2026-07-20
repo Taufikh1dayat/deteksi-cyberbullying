@@ -144,15 +144,15 @@ with st.expander("🏆 Kinerja & Metrik Evaluasi Komparasi Model (Hasil Pelatiha
                     </div>
                     <div style='background: #1e2330; padding: 10px; border-radius: 6px; flex: 1; text-align: center;'>
                         <span style='font-size: 11px; color: #a0aec0; text-transform: uppercase;'>Precision</span>
-                        <div style='font-size: 20px; font-weight: bold; color: #ffffff; margin-top: 2px;'>87.10%</div>
+                        <div style='font-size: 20px; font-weight: bold; color: #ffffff; margin-top: 2px;'>86.47%</div>
                     </div>
                     <div style='background: #1e2330; padding: 10px; border-radius: 6px; flex: 1; text-align: center;'>
                         <span style='font-size: 11px; color: #a0aec0; text-transform: uppercase;'>Recall</span>
-                        <div style='font-size: 20px; font-weight: bold; color: #ffffff; margin-top: 2px;'>86.20%</div>
+                        <div style='font-size: 20px; font-weight: bold; color: #ffffff; margin-top: 2px;'>86.59%</div>
                     </div>
                     <div style='background: #1e2330; padding: 10px; border-radius: 6px; flex: 1; text-align: center;'>
                         <span style='font-size: 11px; color: #a0aec0; text-transform: uppercase;'>F1-Score</span>
-                        <div style='font-size: 20px; font-weight: bold; color: #ffffff; margin-top: 2px;'>86.65%</div>
+                        <div style='font-size: 20px; font-weight: bold; color: #ffffff; margin-top: 2px;'>86.53%</div>
                     </div>
                 </div>
                 <div style='margin-top: 12px; font-size: 12px; color: #4FFFB0; font-weight: bold;'>✔ Unggul pada kestabilan generalisasi data teks</div>
@@ -170,15 +170,15 @@ with st.expander("🏆 Kinerja & Metrik Evaluasi Komparasi Model (Hasil Pelatiha
                     </div>
                     <div style='background: #1e2330; padding: 10px; border-radius: 6px; flex: 1; text-align: center;'>
                         <span style='font-size: 11px; color: #a0aec0; text-transform: uppercase;'>Precision</span>
-                        <div style='font-size: 20px; font-weight: bold; color: #ffffff; margin-top: 2px;'>85.00%</div>
+                        <div style='font-size: 20px; font-weight: bold; color: #ffffff; margin-top: 2px;'>86.27%</div>
                     </div>
                     <div style='background: #1e2330; padding: 10px; border-radius: 6px; flex: 1; text-align: center;'>
                         <span style='font-size: 11px; color: #a0aec0; text-transform: uppercase;'>Recall</span>
-                        <div style='font-size: 20px; font-weight: bold; color: #ffffff; margin-top: 2px;'>84.10%</div>
+                        <div style='font-size: 20px; font-weight: bold; color: #ffffff; margin-top: 2px;'>83.04%</div>
                     </div>
                     <div style='background: #1e2330; padding: 10px; border-radius: 6px; flex: 1; text-align: center;'>
                         <span style='font-size: 11px; color: #a0aec0; text-transform: uppercase;'>F1-Score</span>
-                        <div style='font-size: 20px; font-weight: bold; color: #ffffff; margin-top: 2px;'>84.54%</div>
+                        <div style='font-size: 20px; font-weight: bold; color: #ffffff; margin-top: 2px;'>83.76%</div>
                     </div>
                 </div>
                 <div style='margin-top: 12px; font-size: 12px; color: #FF4F4F; font-weight: bold;'>⚡ Unggul pada efisiensi kecepatan waktu training</div>
