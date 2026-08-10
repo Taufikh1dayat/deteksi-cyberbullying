@@ -6,6 +6,7 @@ import importlib
 import json
 import hashlib
 import requests
+import time
 from pathlib import Path
 
 # ── 🔄 ANTI-CACHE MECHANISM ──────────────────────────────────────────────────
@@ -32,8 +33,6 @@ CACHE_FILE = Path("ai_cache.json")
 # 📌 TEMPELKAN API KEY OPENROUTER KAMU DI SINI AGAR BISA MENABUNG OTOMATIS LIVE
 OPENROUTER_API_KEY = "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"
 MODEL_NAME = "poolside/Laguna-XS-2.1:free"
-# poolside/Laguna-XS-2.1:free 
-# tencent/hy3:free
 
 def muat_cache_disk_lokal() -> dict:
     """Membaca brankas JSON secara lokal dari harddisk."""
@@ -118,6 +117,8 @@ def buat_analisis_forensik_lokal(teks, label, bobot_list):
 # ── 💾 INSIALISASI SESSION STATE ─────────────────────────────────────────────
 if 'df_master' not in st.session_state:
     st.session_state.df_master = None
+if 'benchmark_data' not in st.session_state:
+    st.session_state.benchmark_data = None
 
 # ── UI Header ─────────────────────────────────────────────────────────────────
 st.title("📊 Dashboard Sentimen Real-time Analisis Twitter")
@@ -201,17 +202,33 @@ if tombol_scrape:
     if not df_raw.empty:
         if model_ready:
             with st.spinner("Melakukan preprocessing & prediksi model ML..."):
+                t_prep_start = time.perf_counter()
                 df_raw['cleaned_text'] = df_raw['text'].apply(clean_text)
                 tfidf_matrix = vectorizer.transform(df_raw['cleaned_text'])
+                t_prep = (time.perf_counter() - t_prep_start) * 1000
+
+                t_svm_start = time.perf_counter()
                 df_raw['prediksi_svm'] = model_svm.predict(tfidf_matrix)
+                t_svm = (time.perf_counter() - t_svm_start) * 1000
+
+                t_nb_start = time.perf_counter()
                 df_raw['prediksi_nb'] = model_nb.predict(tfidf_matrix)
+                t_nb = (time.perf_counter() - t_nb_start) * 1000
+
+                st.session_state.benchmark_data = {
+                    'n_tweets': len(df_raw),
+                    't_prep': t_prep,
+                    't_svm': t_svm,
+                    't_nb': t_nb,
+                    'avg_svm': t_svm / len(df_raw) if len(df_raw) > 0 else 0,
+                    'avg_nb': t_nb / len(df_raw) if len(df_raw) > 0 else 0,
+                    'speedup': (t_svm / t_nb) if t_nb > 0 else 1.0
+                }
         
         st.session_state.df_master = df_raw
         st.success(f"🎉 Berhasil mengambil **{len(df_raw)}** tweet terpopuler seputar '{keyword_input}'!")
     else:
         st.error("❌ Gagal mendapatkan data. Pastikan token Apify aktif atau coba keyword lain.")
-
-
 
 # ── 🖥️ RENDER KONTEN DASHBOARD ────────────────────────────────────────────────
 if st.session_state.df_master is not None:
@@ -227,6 +244,35 @@ if st.session_state.df_master is not None:
         df_display['prediksi_nb'] = df_display['prediksi_nb'].map({0: "🟢 Aman", 1: "🚨 Cyberbullying"})
         
     st.dataframe(df_display, use_container_width=True)
+
+    # ── ⚡ VISUALISASI BENCHMARK KECEPATAN INFERENSI (REAL-TIME LATENCY) ────────
+    if 'benchmark_data' in st.session_state and st.session_state.benchmark_data is not None:
+        bm = st.session_state.benchmark_data
+        with st.expander("⚡ Benchmark Kecepatan Inferensi & Latensi Model (Execution Speed Comparison)", expanded=False):
+            st.markdown(f"""
+                <p style='color: #a0aec0; font-size: 14px; margin-bottom: 20px;'>
+                Metrik efisiensi waktu komputasi nyata yang diukur saat memproses <b>{bm['n_tweets']}</b> data tweet secara real-time.
+                </p>
+            """, unsafe_allow_html=True)
+            
+            c1, c2, c3, c4 = st.columns(4)
+            c1.metric("📦 Preprocessing & TF-IDF", f"{bm['t_prep']:.2f} ms", f"{bm['t_prep']/bm['n_tweets']:.2f} ms/tweet")
+            c2.metric("🛡️ Latensi SVM", f"{bm['t_svm']:.3f} ms", f"{bm['avg_svm']:.3f} ms/tweet")
+            c3.metric("📊 Latensi Naïve Bayes", f"{bm['t_nb']:.3f} ms", f"{bm['avg_nb']:.3f} ms/tweet")
+            
+            label_speedup = f"{bm['speedup']:.2f}x Lebih Cepat" if bm['speedup'] >= 1 else f"{1/bm['speedup']:.2f}x Lebih Lambat"
+            c4.metric("⚡ Perbandingan Kecepatan", label_speedup, "Naïve Bayes vs SVM")
+            
+            st.markdown(f"""
+                <div style='background-color: #151922; border-left: 4px solid #4FFFB0; padding: 16px; border-radius: 8px; margin-top: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.2);'>
+                    <span style='color: #4FFFB0; font-weight: bold; font-size: 14px; text-transform: uppercase;'>⚡ Analisis Benchmark Komputasi:</span><br>
+                    <p style='color: #e2e8f0; margin-top: 8px; margin-bottom: 0; line-height: 1.6;'>
+                    Multinomial Naïve Bayes memproses batch {bm['n_tweets']} tweet dalam <b>{bm['t_nb']:.3f} ms</b> ({bm['avg_nb']:.3f} ms/tweet), 
+                    sedangkan Support Vector Machine (SVM) membutuhkan <b>{bm['t_svm']:.3f} ms</b> ({bm['avg_svm']:.3f} ms/tweet). 
+                    Dengan demikian, Naïve Bayes terbukti <b>{bm['speedup']:.2f}x lebih efisien</b> secara komputasi untuk skenario pengolahan data real-time high-throughput.
+                    </p>
+                </div>
+            """, unsafe_allow_html=True)
 
     st.markdown("---")
     st.markdown("<h3 style='color: #ffffff; font-family: sans-serif;'>🔍 Analisis Transparansi Keputusan Model (XAI Layer)</h3>", unsafe_allow_html=True)
