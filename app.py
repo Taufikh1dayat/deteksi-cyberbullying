@@ -9,10 +9,10 @@ import requests
 import time
 from pathlib import Path
 
-# ── 🔄 ANTI-CACHE MECHANISM ──────────────────────────────────────────────────
-import scraper_apify
-importlib.reload(scraper_apify)
-from scraper_apify import scrape_tweets_apify
+# ── 🔄 ANTI-CACHE MECHANISM & MULTI-PLATFORM SCRAPER ──────────────────────────
+import scrapers
+importlib.reload(scrapers)
+from scrapers import scrape_data, scrape_twitter as scrape_tweets_apify
 
 # ── 🧼 IMPORT PREPROCESSOR ──────────────────────────────────────────────────
 try:
@@ -32,7 +32,8 @@ CACHE_FILE = Path("ai_cache.json")
 
 # 📌 TEMPELKAN API KEY OPENROUTER KAMU DI SINI AGAR BISA MENABUNG OTOMATIS LIVE
 OPENROUTER_API_KEY = "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"
-MODEL_NAME = "poolside/Laguna-XS-2.1:free"
+MODEL_NAME = "openrouter/free"
+FALLBACK_MODEL = "liquid/lfm-2.5-2.6b:free"
 
 def muat_cache_disk_lokal() -> dict:
     """Membaca brankas JSON secara lokal dari harddisk."""
@@ -67,17 +68,26 @@ def ambil_narasi_openrouter_live(prompt: str) -> str:
         "HTTP-Referer": "http://localhost:8501",
         "X-Title": "Twitter Sentiment Live Hybrid"
     }
-    payload = {
-        "model": MODEL_NAME,
-        "messages": [{"role": "user", "content": prompt}]
-    }
     
-    response = requests.post(url, headers=headers, json=payload, timeout=15)
-    if response.status_code == 200:
-        data = response.json()
-        return data['choices'][0]['message']['content'].strip()
-    else:
-        raise RuntimeError(f"Server Cloud Error (Code: {response.status_code})")
+    daftar_model = [MODEL_NAME, FALLBACK_MODEL]
+    last_status = None
+    
+    for model_target in daftar_model:
+        try:
+            payload = {
+                "model": model_target,
+                "messages": [{"role": "user", "content": prompt}]
+            }
+            response = requests.post(url, headers=headers, json=payload, timeout=15)
+            if response.status_code == 200:
+                data = response.json()
+                return data['choices'][0]['message']['content'].strip()
+            else:
+                last_status = response.status_code
+        except Exception:
+            continue
+            
+    raise RuntimeError(f"Server Cloud Error (Code: {last_status})")
 
 # ── 📦 UNPICKLE ML COMPONENTS ────────────────────────────────────────────────
 @st.cache_resource
@@ -190,51 +200,69 @@ st.markdown("<br>", unsafe_allow_html=True)
 
 # ── Input panel (sidebar) ─────────────────────────────────────────────────────
 st.sidebar.header("🔍 Parameter Pencarian")
-keyword_input = st.sidebar.text_input("Masukkan Kata Kunci/Keyword:", value="Prabowo")
-jumlah_tweets = st.sidebar.slider("Jumlah Tweet yang Ditarik:", min_value=5, max_value=100, value=10, step=5)
+
+platform_pilihan = st.sidebar.selectbox(
+    "🌐 Pilih Platform Sumber Data:",
+    ["Twitter / X", "TikTok (Komentar Video)"]
+)
+
+if platform_pilihan == "Twitter / X":
+    input_target = st.sidebar.text_input("Masukkan Kata Kunci/Keyword:", value="Prabowo")
+    slider_label = "Jumlah Tweet yang Ditarik:"
+else:
+    input_target = st.sidebar.text_input(
+        "Masukkan URL Video TikTok:",
+        placeholder="https://www.tiktok.com/@.../video/..."
+    )
+    slider_label = "Jumlah Komentar yang Ditarik:"
+
+jumlah_data = st.sidebar.slider(slider_label, min_value=5, max_value=50, value=10, step=5)
 tombol_scrape = st.sidebar.button("🚀 Tarik Data Real-Time")
 
 if tombol_scrape:
-    st.info(f"⏳ Sedang mengirim perintah ke Cloud Apify untuk keyword: **'{keyword_input}'**...")
-    with st.spinner("Memanen data dari server cloud Apify... Mohon tunggu..."):
-        df_raw = scrape_tweets_apify(query=keyword_input, max_results=jumlah_tweets)
-    
-    if not df_raw.empty:
-        if model_ready:
-            with st.spinner("Melakukan preprocessing & prediksi model ML..."):
-                t_prep_start = time.perf_counter()
-                df_raw['cleaned_text'] = df_raw['text'].apply(clean_text)
-                tfidf_matrix = vectorizer.transform(df_raw['cleaned_text'])
-                t_prep = (time.perf_counter() - t_prep_start) * 1000
-
-                t_svm_start = time.perf_counter()
-                df_raw['prediksi_svm'] = model_svm.predict(tfidf_matrix)
-                t_svm = (time.perf_counter() - t_svm_start) * 1000
-
-                t_nb_start = time.perf_counter()
-                df_raw['prediksi_nb'] = model_nb.predict(tfidf_matrix)
-                t_nb = (time.perf_counter() - t_nb_start) * 1000
-
-                st.session_state.benchmark_data = {
-                    'n_tweets': len(df_raw),
-                    't_prep': t_prep,
-                    't_svm': t_svm,
-                    't_nb': t_nb,
-                    'avg_svm': t_svm / len(df_raw) if len(df_raw) > 0 else 0,
-                    'avg_nb': t_nb / len(df_raw) if len(df_raw) > 0 else 0,
-                    'speedup': (t_svm / t_nb) if t_nb > 0 else 1.0
-                }
-        
-        st.session_state.df_master = df_raw
-        st.success(f"🎉 Berhasil mengambil **{len(df_raw)}** tweet terpopuler seputar '{keyword_input}'!")
+    if not input_target.strip():
+        st.warning("⚠️ Silakan masukkan kata kunci atau URL video terlebih dahulu!")
     else:
-        st.error("❌ Gagal mendapatkan data. Pastikan token Apify aktif atau coba keyword lain.")
+        st.info(f"⏳ Sedang memproses penarikan data dari **{platform_pilihan}**...")
+        with st.spinner(f"Memanen data dari server cloud Apify ({platform_pilihan})... Mohon tunggu..."):
+            df_raw = scrape_data(platform=platform_pilihan, target=input_target, max_results=jumlah_data)
+        
+        if not df_raw.empty:
+            if model_ready:
+                with st.spinner("Melakukan preprocessing & prediksi model ML..."):
+                    t_prep_start = time.perf_counter()
+                    df_raw['cleaned_text'] = df_raw['text'].apply(clean_text)
+                    tfidf_matrix = vectorizer.transform(df_raw['cleaned_text'])
+                    t_prep = (time.perf_counter() - t_prep_start) * 1000
+
+                    t_svm_start = time.perf_counter()
+                    df_raw['prediksi_svm'] = model_svm.predict(tfidf_matrix)
+                    t_svm = (time.perf_counter() - t_svm_start) * 1000
+
+                    t_nb_start = time.perf_counter()
+                    df_raw['prediksi_nb'] = model_nb.predict(tfidf_matrix)
+                    t_nb = (time.perf_counter() - t_nb_start) * 1000
+
+                    st.session_state.benchmark_data = {
+                        'n_tweets': len(df_raw),
+                        't_prep': t_prep,
+                        't_svm': t_svm,
+                        't_nb': t_nb,
+                        'avg_svm': t_svm / len(df_raw) if len(df_raw) > 0 else 0,
+                        'avg_nb': t_nb / len(df_raw) if len(df_raw) > 0 else 0,
+                        'speedup': (t_svm / t_nb) if t_nb > 0 else 1.0
+                    }
+            
+            st.session_state.df_master = df_raw
+            st.success(f"🎉 Berhasil memanen **{len(df_raw)}** data real-time dari **{platform_pilihan}**!")
+        else:
+            st.error("❌ Gagal mendapatkan data. Pastikan URL video atau kata kunci valid, dan token Apify aktif.")
 
 # ── 🖥️ RENDER KONTEN DASHBOARD ────────────────────────────────────────────────
 if st.session_state.df_master is not None:
     df_hasil = st.session_state.df_master
     
-    kolom_tampilan = ['username', 'created_at', 'text']
+    kolom_tampilan = (['platform'] if 'platform' in df_hasil.columns else []) + ['username', 'created_at', 'text']
     if model_ready:
         kolom_tampilan += ['prediksi_svm', 'prediksi_nb']
         
@@ -408,7 +436,7 @@ if st.session_state.df_master is not None:
         else:
             # Skenario 2: Cache Miss (Tembak OpenRouter & Langsung Tabung Otomatis ke JSON)
             try:
-                with st.spinner("⚡ Menghubungi Tencent AI via OpenRouter untuk mengamankan narasi baru..."):
+                with st.spinner("⚡ Menghubungi LLM Cloud via OpenRouter untuk mengamankan narasi baru..."):
                     gemini_text = ambil_narasi_openrouter_live(prompt_skenario)
                 
                 # Masukkan ke RAM dan kunci ke Harddisk secara real-time

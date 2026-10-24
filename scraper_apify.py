@@ -1,101 +1,16 @@
-from apify_client import ApifyClient
-import pandas as pd
+"""
+Jembatan kompatibilitas (Backward-Compatibility Bridge).
+Seluruh modul scraper sekarang telah dirapikan ke dalam paket folder 'scrapers/'.
+"""
+from scrapers.config import APIFY_TOKENS
+from scrapers.twitter import scrape_twitter as scrape_tweets_apify
+from scrapers.tiktok import scrape_tiktok
+from scrapers.manager import scrape_data
 
-# ── 🔑 CONFIGURATION & MULTI-TOKEN FALLBACK ───────────────────────────
-APIFY_TOKENS = [
-    "apify_api_ACgxAK0CRe49YvyIIB0buj4ld1hf933bunBt",
-    "apify_api_vQO9QbL4Pmlbr2j3Wmw8UsUFNZ8NSd1zI6HG",
-    "apify_api_ohHltIT0elCbFbec3VunMFatgUQJ1r2uNqzW"
-]
-# ──────────────────────────────────────────────────────────────────────
-
-def scrape_tweets_apify(query: str, max_results: int = 10) -> pd.DataFrame:
-    """
-    Mengeruk data X via Apify SDK menggunakan 1 Aktor utama 'api-ninja/x-twitter-advanced-search'.
-    """
-    full_query = query.strip()
-    # Aktor api-ninja mewajibkan numberOfTweets minimal 20 (>= 20)
-    actor_limit = max(max_results, 20)
-    
-    run_input = {
-        "query": full_query,
-        "search_type": "Latest",
-        "numberOfTweets": actor_limit
-    }
-    
-    last_error = None
-    
-    for token in APIFY_TOKENS:
-        if not token or "apify_api_" not in token:
-            continue
-            
-        try:
-            client = ApifyClient(token)
-            print(f"\n[PROSES] Menghubungi Aktor 'api-ninja/x-twitter-advanced-search' (Token: {token[:12]}...) untuk query: '{full_query}'...")
-            
-            run = client.actor("api-ninja/x-twitter-advanced-search").call(run_input=run_input)
-            records = []
-            
-            for item in client.dataset(run.default_dataset_id).iterate_items():
-                text_content = (
-                    item.get('text') or 
-                    item.get('full_text') or 
-                    item.get('fullText') or 
-                    (item.get('tweet', {}).get('full_text') if isinstance(item.get('tweet'), dict) else None)
-                )
-                
-                if not text_content:
-                    continue
-                
-                username_val = None
-                user_info = item.get('user_info') or item.get('user') or item.get('author')
-                if isinstance(user_info, dict):
-                    username_val = user_info.get('screen_name') or user_info.get('username') or user_info.get('name')
-                if not username_val:
-                    username_val = item.get('username') or item.get('screen_name') or item.get('author_name') or "X_User"
-                
-                stats_obj = item.get('stats') or item or {}
-                
-                records.append({
-                    'id': str(item.get('tweet_id') or item.get('id') or item.get('id_str', '')),
-                    'text': str(text_content).strip(),
-                    'created_at': str(item.get('created_at') or item.get('createdAt') or item.get('date') or ''),
-                    'like_count': stats_obj.get('favorites') or stats_obj.get('favorite_count') or stats_obj.get('likes') or 0,
-                    'retweet_count': stats_obj.get('retweets') or stats_obj.get('retweet_count') or 0,
-                    'reply_count': stats_obj.get('replies') or stats_obj.get('reply_count') or 0,
-                    'username': username_val,
-                    'label': None
-                })
-                
-            df = pd.DataFrame(records)
-            
-            if not df.empty:
-                df = df.drop_duplicates(subset=['text'])
-                df = df[~df['text'].str.startswith('RT @', na=False)]
-                
-                # Urutkan tanggal dari yang paling baru secara lokal
-                df['created_at_dt'] = pd.to_datetime(df['created_at'], errors='coerce')
-                df = df.sort_values(by='created_at_dt', ascending=False)
-                df = df.drop(columns=['created_at_dt'], errors='ignore')
-                
-                print(f"[BERHASIL] Memanen {len(df)} tweet real-time!")
-                return df.head(max_results)
-                
-        except Exception as e:
-            last_error = str(e)
-            print(f"[WARN] Token {token[:12]}... mengalami kendala: {last_error}")
-            
-    print(f"[ERROR] Seluruh token Apify gagal dieksekusi: {last_error}")
-    return pd.DataFrame()
+__all__ = ["APIFY_TOKENS", "scrape_tweets_apify", "scrape_tiktok", "scrape_data"]
 
 if __name__ == "__main__":
     print("\n==================================================")
-    print("[TESTING] REAL-TIME SCRAPER (API-NINJA)")
+    print("[TESTING] SCRAPER PACKAGE MODULE CHECK")
     print("==================================================")
-    df_hasil = scrape_tweets_apify(query="Prabowo", max_results=10)
-    if not df_hasil.empty:
-        for idx, row in df_hasil.iterrows():
-            clean_t = str(row['text']).encode('ascii', 'ignore').decode('ascii')
-            print(f"#{idx} @{row['username']} ({row['created_at']}): {clean_t[:70]}...")
-    else:
-        print("Dataset kosong.")
+    print("Modul scrapers berhasil dimuat.")
