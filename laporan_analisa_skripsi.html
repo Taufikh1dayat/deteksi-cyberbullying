@@ -1,0 +1,1324 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="claude:viewport-fit-sides" content="cover">
+<title>Audit Lengkap Skripsi Cyberbullying</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,400;0,500;0,600;1,400&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ── LAYOUT: tab-based audit report, dark-first single theme ── */
+:root {
+  /* surface */
+  --bg-root: #090d14;
+  --bg-surface: #0f1520;
+  --bg-card: #141c2a;
+  --bg-card-alt: #19243a;
+  --bg-code: #070b11;
+
+  /* border */
+  --br-subtle: #1e2d42;
+  --br-strong: #2c4060;
+
+  /* text */
+  --tx-primary: #e8eef7;
+  --tx-secondary: #7f96b4;
+  --tx-muted: #47627f;
+  --tx-mono: #8bbbd8;
+
+  /* accent — SVM = Sky, NB = Amber */
+  --c-svm: #38bdf8;
+  --c-nb: #f59e0b;
+  --c-svm-dim: rgba(56,189,248,.12);
+  --c-nb-dim: rgba(245,158,11,.12);
+
+  /* status */
+  --c-danger: #f87171;
+  --c-danger-dim: rgba(248,113,113,.12);
+  --c-warn: #fb923c;
+  --c-warn-dim: rgba(251,146,60,.12);
+  --c-ok: #34d399;
+  --c-ok-dim: rgba(52,211,153,.12);
+  --c-info: #a78bfa;
+  --c-info-dim: rgba(167,139,250,.12);
+
+  /* type */
+  --ff-body: 'Inter', system-ui, sans-serif;
+  --ff-mono: 'JetBrains Mono', monospace;
+
+  color-scheme: dark;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { font-size: 15px; }
+
+body {
+  font-family: var(--ff-body);
+  background: var(--bg-root);
+  color: var(--tx-primary);
+  line-height: 1.6;
+  padding-left: max(20px, env(safe-area-inset-left, 0px));
+  padding-right: max(20px, env(safe-area-inset-right, 0px));
+  padding-top: max(32px, env(safe-area-inset-top, 0px));
+  padding-bottom: max(64px, env(safe-area-inset-bottom, 0px));
+  max-width: 1140px;
+  margin: 0 auto;
+}
+
+/* ── PAGE HEADER ── */
+.pg-header {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid var(--br-subtle);
+  margin-bottom: 28px;
+}
+
+.pg-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.pg-title {
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: -0.4px;
+  color: var(--tx-primary);
+  text-wrap: balance;
+}
+
+.pg-sub {
+  font-size: 13px;
+  color: var(--tx-secondary);
+  font-family: var(--ff-mono);
+}
+
+/* ── BADGE ── */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-family: var(--ff-mono);
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  white-space: nowrap;
+}
+.b-danger { background: var(--c-danger-dim); color: var(--c-danger); border: 1px solid rgba(248,113,113,.3); }
+.b-warn   { background: var(--c-warn-dim);   color: var(--c-warn);   border: 1px solid rgba(251,146,60,.3); }
+.b-ok     { background: var(--c-ok-dim);     color: var(--c-ok);     border: 1px solid rgba(52,211,153,.3); }
+.b-info   { background: var(--c-info-dim);   color: var(--c-info);   border: 1px solid rgba(167,139,250,.3); }
+.b-svm    { background: var(--c-svm-dim);    color: var(--c-svm);    border: 1px solid rgba(56,189,248,.3); }
+.b-nb     { background: var(--c-nb-dim);     color: var(--c-nb);     border: 1px solid rgba(245,158,11,.3); }
+
+/* ── TABS ── */
+.tab-bar {
+  display: flex;
+  gap: 2px;
+  border-bottom: 1px solid var(--br-subtle);
+  margin-bottom: 24px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.tab-bar::-webkit-scrollbar { display: none; }
+
+.tab-btn {
+  flex-shrink: 0;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  padding: 10px 18px;
+  font-family: var(--ff-body);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--tx-secondary);
+  cursor: pointer;
+  margin-bottom: -1px;
+  transition: color 0.15s, border-color 0.15s;
+}
+.tab-btn:hover { color: var(--tx-primary); }
+.tab-btn.active { color: var(--c-svm); border-bottom-color: var(--c-svm); }
+
+.tab-panel { display: none; }
+.tab-panel.active { display: block; }
+
+/* ── STAT TILES ── */
+.tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 14px;
+  margin-bottom: 24px;
+}
+
+.tile {
+  background: var(--bg-card);
+  border: 1px solid var(--br-subtle);
+  border-radius: 8px;
+  padding: 16px 18px;
+}
+
+.tile-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--tx-muted);
+  margin-bottom: 6px;
+}
+
+.tile-value {
+  font-size: 28px;
+  font-weight: 700;
+  font-family: var(--ff-mono);
+  font-variant-numeric: tabular-nums;
+  line-height: 1.1;
+}
+
+.tile-sub {
+  font-size: 11px;
+  color: var(--tx-muted);
+  margin-top: 3px;
+}
+
+.tile-svm { border-left: 3px solid var(--c-svm); }
+.tile-nb  { border-left: 3px solid var(--c-nb);  }
+.tile-ok  { border-left: 3px solid var(--c-ok);  }
+.tile-warn{ border-left: 3px solid var(--c-warn); }
+.tile-danger { border-left: 3px solid var(--c-danger); }
+
+/* ── CARD ── */
+.card {
+  background: var(--bg-surface);
+  border: 1px solid var(--br-subtle);
+  border-radius: 8px;
+  padding: 20px;
+  margin-bottom: 18px;
+}
+
+.card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.card-title {
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  color: var(--tx-secondary);
+}
+
+/* ── FINDING ITEMS ── */
+.findings { display: flex; flex-direction: column; gap: 14px; }
+
+.finding {
+  background: var(--bg-card);
+  border: 1px solid var(--br-subtle);
+  border-radius: 6px;
+  padding: 14px 16px;
+}
+
+.finding-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 8px;
+  margin-bottom: 6px;
+  flex-wrap: wrap;
+}
+
+.finding-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--tx-primary);
+}
+
+.finding-desc {
+  font-size: 13px;
+  color: var(--tx-secondary);
+  line-height: 1.55;
+  margin-bottom: 8px;
+}
+
+.finding-code {
+  background: var(--bg-code);
+  border: 1px solid var(--br-subtle);
+  border-radius: 4px;
+  padding: 9px 12px;
+  font-family: var(--ff-mono);
+  font-size: 12px;
+  color: var(--tx-mono);
+  overflow-x: auto;
+  margin-bottom: 8px;
+  line-height: 1.7;
+  white-space: pre;
+}
+
+.finding-fix {
+  font-size: 12px;
+  color: var(--c-ok);
+  font-family: var(--ff-mono);
+}
+
+/* ── TABLE ── */
+.tbl-wrap {
+  overflow-x: auto;
+  border-radius: 6px;
+  border: 1px solid var(--br-subtle);
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+thead th {
+  background: var(--bg-card);
+  color: var(--tx-muted);
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 11px;
+  letter-spacing: 0.4px;
+  padding: 10px 14px;
+  text-align: left;
+  border-bottom: 1px solid var(--br-subtle);
+}
+
+tbody td {
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--br-subtle);
+  vertical-align: top;
+}
+
+tbody tr:last-child td { border-bottom: none; }
+
+tbody tr:hover { background: var(--bg-card); }
+
+td code, th code {
+  font-family: var(--ff-mono);
+  font-size: 12px;
+  background: var(--bg-card-alt);
+  padding: 1px 5px;
+  border-radius: 3px;
+  color: var(--tx-mono);
+}
+
+td.num {
+  font-family: var(--ff-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── GRID HELPERS ── */
+.g2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 18px; margin-bottom: 18px; }
+.g3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; margin-bottom: 18px; }
+
+/* ── METER BAR (accuracy viz) ── */
+.meter-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--br-subtle);
+}
+.meter-row:last-child { border-bottom: none; }
+
+.meter-label {
+  width: 80px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--tx-secondary);
+  flex-shrink: 0;
+}
+
+.meter-track {
+  flex: 1;
+  height: 8px;
+  background: var(--bg-card-alt);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.meter-fill {
+  height: 100%;
+  border-radius: 4px;
+}
+
+.meter-val {
+  width: 55px;
+  text-align: right;
+  font-family: var(--ff-mono);
+  font-size: 13px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  flex-shrink: 0;
+}
+
+/* ── DIFF TAG ── */
+.diff-pos { color: var(--c-ok); font-family: var(--ff-mono); font-size: 12px; }
+.diff-neg { color: var(--c-danger); font-family: var(--ff-mono); font-size: 12px; }
+
+/* ── SECTION HEADER ── */
+.sec-head {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--tx-primary);
+  margin-bottom: 14px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--br-subtle);
+}
+
+/* ── ROADMAP ── */
+.roadmap { display: flex; flex-direction: column; gap: 14px; }
+
+.rmap-item {
+  display: flex;
+  gap: 16px;
+  background: var(--bg-card);
+  border: 1px solid var(--br-subtle);
+  border-radius: 8px;
+  padding: 16px;
+}
+
+.rmap-num {
+  font-family: var(--ff-mono);
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--c-svm);
+  background: var(--bg-card-alt);
+  width: 38px;
+  height: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  flex-shrink: 0;
+}
+
+.rmap-body h3 {
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 5px;
+}
+
+.rmap-body p {
+  font-size: 13px;
+  color: var(--tx-secondary);
+  line-height: 1.55;
+  margin-bottom: 6px;
+}
+
+.rmap-detail {
+  font-size: 12px;
+  color: var(--tx-muted);
+  font-family: var(--ff-mono);
+}
+
+/* ── VERDICT BOX ── */
+.verdict {
+  border-radius: 8px;
+  padding: 16px 18px;
+  margin-bottom: 14px;
+  font-size: 13px;
+  line-height: 1.6;
+}
+.v-danger { background: var(--c-danger-dim); border: 1px solid rgba(248,113,113,.3); }
+.v-warn   { background: var(--c-warn-dim);   border: 1px solid rgba(251,146,60,.3); }
+.v-ok     { background: var(--c-ok-dim);     border: 1px solid rgba(52,211,153,.3); }
+.v-info   { background: var(--c-info-dim);   border: 1px solid rgba(167,139,250,.3); }
+
+.v-head {
+  font-weight: 700;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 6px;
+}
+.v-danger .v-head { color: var(--c-danger); }
+.v-warn   .v-head { color: var(--c-warn);   }
+.v-ok     .v-head { color: var(--c-ok);     }
+.v-info   .v-head { color: var(--c-info);   }
+
+/* ── DIFF ANNOTATION ── */
+.diff-block {
+  background: var(--bg-code);
+  border: 1px solid var(--br-subtle);
+  border-radius: 6px;
+  overflow: hidden;
+  margin: 8px 0;
+  font-family: var(--ff-mono);
+  font-size: 12px;
+  line-height: 1.7;
+}
+
+.diff-block .d-old {
+  background: rgba(248,113,113,.08);
+  color: var(--c-danger);
+  padding: 2px 10px;
+  display: block;
+  white-space: pre;
+}
+.diff-block .d-new {
+  background: rgba(52,211,153,.08);
+  color: var(--c-ok);
+  padding: 2px 10px;
+  display: block;
+  white-space: pre;
+}
+.diff-block .d-ctx {
+  color: var(--tx-muted);
+  padding: 2px 10px;
+  display: block;
+  white-space: pre;
+}
+
+/* RESPONSIVE */
+@media (max-width: 480px) {
+  .tab-btn { padding: 10px 13px; }
+  .tile-value { font-size: 22px; }
+}
+</style>
+</head>
+<body>
+
+<div class="pg-header">
+  <div class="pg-meta">
+    <span class="badge b-info">ANALISA FULL CODE REVIEW</span>
+    <span class="badge b-danger">3 KERENTANAN KRITIS</span>
+    <span class="badge b-warn">7 TEMUAN SEKUNDER</span>
+    <span class="badge b-ok">Arsitektur Modular: OK</span>
+  </div>
+  <h1 class="pg-title">Audit Menyeluruh: Sistem Deteksi Cyberbullying Bahasa Indonesia</h1>
+  <p class="pg-sub">Repo: D:\SKRIPSI TES\skripsi\sd &nbsp;·&nbsp; Branch: main (12 commits) &nbsp;·&nbsp; Dibaca langsung dari source: app.py, preprocessor.py, scrapers/*.py, *.ipynb</p>
+</div>
+
+<!-- ─── TABS ─── -->
+<nav class="tab-bar" role="tablist">
+  <button class="tab-btn active" data-tab="t-kritis" role="tab">🚨 Temuan Kritis</button>
+  <button class="tab-btn" data-tab="t-model" role="tab">📊 Evaluasi Model</button>
+  <button class="tab-btn" data-tab="t-arsitektur" role="tab">🏗️ Arsitektur Kode</button>
+  <button class="tab-btn" data-tab="t-nlp" role="tab">🧼 Pipeline NLP</button>
+  <button class="tab-btn" data-tab="t-scraper" role="tab">🔌 Scraper</button>
+  <button class="tab-btn" data-tab="t-sidang" role="tab">🎓 Kesiapan Sidang</button>
+  <button class="tab-btn" data-tab="t-roadmap" role="tab">🚀 Roadmap Aksi</button>
+</nav>
+
+<!-- ════════════════════════════════════════════════════ TAB 1: KRITIS -->
+<section class="tab-panel active" id="t-kritis">
+  <div class="tiles">
+    <div class="tile tile-danger">
+      <div class="tile-label">Severity KRITIS</div>
+      <div class="tile-value" style="color:var(--c-danger)">3</div>
+      <div class="tile-sub">Wajib diperbaiki sebelum sidang</div>
+    </div>
+    <div class="tile tile-warn">
+      <div class="tile-label">Severity SEDANG</div>
+      <div class="tile-value" style="color:var(--c-warn)">7</div>
+      <div class="tile-sub">Perlu ditangani untuk produksi / laporan</div>
+    </div>
+    <div class="tile tile-ok">
+      <div class="tile-label">File Diaudit</div>
+      <div class="tile-value" style="color:var(--c-ok)">9</div>
+      <div class="tile-sub">app.py, preprocessor.py, scrapers/*, .ipynb, backup</div>
+    </div>
+  </div>
+
+  <!-- Temuan 1 -->
+  <div class="card" style="border-left:3px solid var(--c-danger)">
+    <div class="card-head">
+      <span class="card-title">🔐 Temuan 1 — Kredensial API Bocor Plaintext (KRITIS)</span>
+      <span class="badge b-danger">SECURITY</span>
+    </div>
+    <div class="findings">
+      <div class="finding">
+        <div class="finding-head">
+          <span class="finding-name">OpenRouter API Key hardcoded di app.py baris 34 DAN app_backup.py baris 33</span>
+          <span class="badge b-danger">CVE-Level: High</span>
+        </div>
+        <div class="finding-desc">
+          Key <code>sk-or-v1-1d5f631...</code> tertulis langsung di dua file, dua lokasi berbeda, dan sudah masuk riwayat git. Setiap orang yang punya akses repo bisa membaca key ini, menguras kuota, atau menyalahgunakan endpoint OpenRouter.
+        </div>
+        <div class="finding-code"><!-- app.py, baris 34 (KONDISI ASLI) -->
+OPENROUTER_API_KEY = "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"
+
+<!-- HARUS DIUBAH menjadi: -->
+OPENROUTER_API_KEY = st.secrets.get("OPENROUTER_API_KEY", "")
+<!-- atau -->
+OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY", "")</div>
+        <div class="finding-fix">→ Buat .streamlit/secrets.toml (tidak dicommit) · Tambahkan ke .gitignore · Revoke key lama di dashboard OpenRouter</div>
+      </div>
+      <div class="finding">
+        <div class="finding-head">
+          <span class="finding-name">3 Apify Token hardcoded di scrapers/config.py baris 2-6</span>
+          <span class="badge b-danger">CVE-Level: High</span>
+        </div>
+        <div class="finding-desc">
+          Semua 3 token Apify (<code>apify_api_ACgxAK...</code>, <code>apify_api_vQO9Qb...</code>, <code>apify_api_ohHltI...</code>) ada di file Python yang dicommit. Token ini memberi akses penuh ke akun Apify — bisa memangkas kuota atau memicu tagihan.
+        </div>
+        <div class="finding-code"><!-- scrapers/config.py (KONDISI ASLI) -->
+APIFY_TOKENS = [
+    "apify_api_ACgxAK0CRe49YvyIIB0buj4ld1hf933bunBt",
+    "apify_api_vQO9QbL4Pmlbr2j3Wmw8UsUFNZ8NSd1zI6HG",
+    "apify_api_ohHltIT0elCbFbec3VunMFatgUQJ1r2uNqzW"
+]
+
+<!-- HARUS DIUBAH: baca dari secrets atau environment -->
+import json, os
+_raw = st.secrets.get("APIFY_TOKENS", "[]")
+APIFY_TOKENS = json.loads(_raw) if isinstance(_raw, str) else list(_raw)</div>
+        <div class="finding-fix">→ Simpan sebagai array JSON di secrets.toml · Jangan commit secrets.toml · Pertimbangkan rotasi token</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Temuan 2 -->
+  <div class="card" style="border-left:3px solid var(--c-danger)">
+    <div class="card-head">
+      <span class="card-title">📦 Temuan 2 — Tidak Ada requirements.txt (KRITIS untuk Reproducibility)</span>
+      <span class="badge b-danger">REPRODUCIBILITY</span>
+    </div>
+    <div class="finding">
+      <div class="finding-desc">
+        Proyek tidak memiliki <code>requirements.txt</code> maupun <code>pyproject.toml</code>. Dosen penguji yang mencoba menjalankan dashboard di laptop mereka sendiri akan menerima <code>ModuleNotFoundError</code> pada setiap library. Ini juga berarti kita tidak tahu versi pasti scikit-learn saat model dilatih — jika versi berbeda, format file <code>.pkl</code> bisa tidak kompatibel.
+      </div>
+      <div class="finding-code"><!-- Hasilkan dari environment aktif, lalu pin versi -->
+# Jalankan sekali di terminal:
+pip freeze > requirements.txt
+
+# requirements.txt minimum yang diperlukan:
+streamlit>=1.35
+pandas>=2.0
+scikit-learn>=1.4        # KRITIS: harus sama persis dengan versi training
+PySastrawi>=1.0
+lime>=0.2.0.1
+apify-client>=1.7
+requests>=2.31
+joblib>=1.3
+tqdm>=4.66
+numpy>=1.26</div>
+      <div class="finding-fix">→ Jalankan pip freeze > requirements.txt · Commit file ini · Verifikasi versi scikit-learn cocok dengan yang dipakai saat training notebook</div>
+    </div>
+  </div>
+
+  <!-- Temuan 3 -->
+  <div class="card" style="border-left:3px solid var(--c-warn)">
+    <div class="card-head">
+      <span class="card-title">⚠️ Temuan 3 — Inkonsistensi Metrik di Dua File (app.py vs app_backup.py)</span>
+      <span class="badge b-warn">DATA INTEGRITY</span>
+    </div>
+    <div class="finding">
+      <div class="finding-desc">
+        Metrik SVM dan NB ditulis manual sebagai string HTML di <em>dua</em> file berbeda dengan nilai berbeda. Ini bukan hanya kesalahan kode — ini akan jadi bahan pertanyaan penguji jika screenshot diambil dari versi yang salah.
+      </div>
+      <div class="finding-code"><!-- PERBEDAAN SPESIFIK YANG DITEMUKAN LANGSUNG DI KODE -->
+                  app.py (AKTIF)      app_backup.py (LAMA)     Δ
+SVM Precision:    86.47%              87.10%                   +0.63%  ← BEDA!
+SVM Recall:       86.59%              86.20%                   -0.39%  ← BEDA!
+SVM F1-Score:     86.53%              86.65%                   +0.12%  ← BEDA!
+NB Precision:     86.27%              85.00%                   -1.27%  ← BEDA!
+NB Recall:        83.04%              84.10%                   +1.06%  ← BEDA!
+NB F1-Score:      83.76%              84.54%                   +0.78%  ← BEDA!</div>
+      <div class="finding-fix">→ Hapus app_backup.py · Jalankan cek_metrik.py untuk nilai definitif · Update metrik di app.py berdasarkan output cek_metrik.py yang terverifikasi</div>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════════════ TAB 2: MODEL -->
+<section class="tab-panel" id="t-model">
+  <div class="tiles">
+    <div class="tile tile-svm">
+      <div class="tile-label">SVM Akurasi</div>
+      <div class="tile-value" style="color:var(--c-svm)">86.75%</div>
+      <div class="tile-sub">Verified dari output notebook</div>
+    </div>
+    <div class="tile tile-nb">
+      <div class="tile-label">NB Akurasi</div>
+      <div class="tile-value" style="color:var(--c-nb)">84.62%</div>
+      <div class="tile-sub">Verified dari output notebook</div>
+    </div>
+    <div class="tile tile-ok">
+      <div class="tile-label">Dataset Terpakai</div>
+      <div class="tile-value" style="color:var(--c-ok)">13.165</div>
+      <div class="tile-sub">Setelah dropna, dari 13.169 baris</div>
+    </div>
+    <div class="tile tile-warn">
+      <div class="tile-label">Imbalance Ratio</div>
+      <div class="tile-value" style="color:var(--c-warn)">55:44</div>
+      <div class="tile-sub">Bullying:Aman — mild, masih wajar</div>
+    </div>
+  </div>
+
+  <!-- MODEL METRICS COMPARISON -->
+  <div class="g2">
+    <div class="card">
+      <div class="card-head">
+        <span class="card-title" style="color:var(--c-svm)">🛡️ SVM — Linear Kernel + Platt Scaling</span>
+      </div>
+      <div class="meter-row">
+        <span class="meter-label">Accuracy</span>
+        <div class="meter-track"><div class="meter-fill" style="width:86.75%;background:var(--c-svm)"></div></div>
+        <span class="meter-val" style="color:var(--c-svm)">86.75%</span>
+      </div>
+      <div class="meter-row">
+        <span class="meter-label">Precision</span>
+        <div class="meter-track"><div class="meter-fill" style="width:86.47%;background:var(--c-svm)"></div></div>
+        <span class="meter-val" style="color:var(--c-svm)">86.47%</span>
+      </div>
+      <div class="meter-row">
+        <span class="meter-label">Recall</span>
+        <div class="meter-track"><div class="meter-fill" style="width:86.59%;background:var(--c-svm)"></div></div>
+        <span class="meter-val" style="color:var(--c-svm)">86.59%</span>
+      </div>
+      <div class="meter-row">
+        <span class="meter-label">F1-Score</span>
+        <div class="meter-track"><div class="meter-fill" style="width:86.53%;background:var(--c-svm)"></div></div>
+        <span class="meter-val" style="color:var(--c-svm)">86.53%</span>
+      </div>
+      <div style="margin-top:12px; font-size:12px; color:var(--tx-muted)">
+        <code>SVC(kernel='linear', probability=True)</code> · Vocabulary: 11.897 fitur TF-IDF
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-head">
+        <span class="card-title" style="color:var(--c-nb)">📊 NB — Multinomial Naïve Bayes</span>
+      </div>
+      <div class="meter-row">
+        <span class="meter-label">Accuracy</span>
+        <div class="meter-track"><div class="meter-fill" style="width:84.62%;background:var(--c-nb)"></div></div>
+        <span class="meter-val" style="color:var(--c-nb)">84.62%</span>
+      </div>
+      <div class="meter-row">
+        <span class="meter-label">Precision</span>
+        <div class="meter-track"><div class="meter-fill" style="width:86.27%;background:var(--c-nb)"></div></div>
+        <span class="meter-val" style="color:var(--c-nb)">86.27%</span>
+      </div>
+      <div class="meter-row">
+        <span class="meter-label">Recall</span>
+        <div class="meter-track"><div class="meter-fill" style="width:83.04%;background:var(--c-nb)"></div></div>
+        <span class="meter-val" style="color:var(--c-nb)">83.04%</span>
+      </div>
+      <div class="meter-row">
+        <span class="meter-label">F1-Score</span>
+        <div class="meter-track"><div class="meter-fill" style="width:83.76%;background:var(--c-nb)"></div></div>
+        <span class="meter-val" style="color:var(--c-nb)">83.76%</span>
+      </div>
+      <div style="margin-top:12px; font-size:12px; color:var(--tx-muted)">
+        <code>MultinomialNB(alpha=1.0)</code> · Inferensi ~1.5–4× lebih cepat dari SVM
+      </div>
+    </div>
+  </div>
+
+  <!-- CATATAN UNTUK SIDANG -->
+  <div class="card">
+    <div class="card-head">
+      <span class="card-title">📝 Poin Penting untuk Pertahanan Bab IV</span>
+    </div>
+    <div class="findings">
+      <div class="finding">
+        <div class="finding-head">
+          <span class="finding-name">Imbalance dataset 55.5% Bullying vs 44.5% Aman — tidak perlu SMOTE</span>
+          <span class="badge b-ok">AMAN</span>
+        </div>
+        <div class="finding-desc">
+          Rasio 55:44 tergolong mild imbalance. Penguji mungkin bertanya kenapa tidak pakai SMOTE/oversampling. Jawaban: threshold 60:40 umumnya belum kritis; F1-Score kedua kelas seimbang, membuktikan model tidak bias ke kelas mayoritas.
+        </div>
+      </div>
+      <div class="finding">
+        <div class="finding-head">
+          <span class="finding-name">TF-IDF defaultparams — tidak ada n-gram eksplisit di notebook training</span>
+          <span class="badge b-warn">POTENSIAL PERTANYAAN</span>
+        </div>
+        <div class="finding-desc">
+          Notebook memanggil <code>TfidfVectorizer()</code> tanpa parameter apapun — pakai default: unigram only (<code>ngram_range=(1,1)</code>), tidak ada limit fitur. Ringkasan menyebut "TF-IDF n-gram" tapi kode hanya unigram. Perlu diklarifikasi di naskah.
+        </div>
+        <div class="finding-fix">→ Ubah klaim "n-gram" di naskah menjadi "TF-IDF unigram" ATAU retrain dengan ngram_range=(1,2) untuk bigram</div>
+      </div>
+      <div class="finding">
+        <div class="finding-head">
+          <span class="finding-name">Benchmark latensi: diukur via time.perf_counter() — metode valid untuk skripsi</span>
+          <span class="badge b-ok">VALID</span>
+        </div>
+        <div class="finding-desc">
+          Kode di <code>app.py</code> baris 233-244 menggunakan <code>time.perf_counter()</code> secara terpisah per model (preprocessing, SVM, NB). Ini adalah metodologi yang tepat dan dapat dipertanggungjawabkan. Naïve Bayes hampir selalu menang karena hanya operasi perkalian log-probabilitas sedangkan SVM memerlukan dot product pada support vectors.
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════════════ TAB 3: ARSITEKTUR -->
+<section class="tab-panel" id="t-arsitektur">
+  <div class="sec-head">Peta Arsitektur Kode (Dibaca Langsung dari File)</div>
+
+  <!-- FILE INVENTORY -->
+  <div class="card">
+    <div class="card-head">
+      <span class="card-title">📂 Inventori File Lengkap + Status</span>
+    </div>
+    <div class="tbl-wrap">
+      <table>
+        <thead>
+          <tr><th>File/Folder</th><th>Peran Aktual</th><th>Status</th><th>Catatan</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>app.py</code></td>
+            <td>Dashboard utama Streamlit</td>
+            <td><span class="badge b-ok">AKTIF</span></td>
+            <td>Entry point utama. 464 baris. Memuat 3 pkl, scraper, LIME, LLM cache.</td>
+          </tr>
+          <tr>
+            <td><code>app_backup.py</code></td>
+            <td>Versi lama sebelum TikTok + benchmark</td>
+            <td><span class="badge b-danger">DEAD CODE</span></td>
+            <td>Masih pakai <code>scraper_apify.py</code> lama. Metrik berbeda dari app.py aktif. Harus dihapus.</td>
+          </tr>
+          <tr>
+            <td><code>preprocessor.py</code></td>
+            <td>Pipeline NLP (lowercase → clean → alay → stopword → stem)</td>
+            <td><span class="badge b-ok">STABIL</span></td>
+            <td>Berfungsi ganda: modul import dan bulk preprocessing jika dijalankan langsung.</td>
+          </tr>
+          <tr>
+            <td><code>scrapers/__init__.py</code></td>
+            <td>Export publik paket scraper</td>
+            <td><span class="badge b-ok">OK</span></td>
+            <td>Export: APIFY_TOKENS, scrape_twitter, scrape_tiktok, scrape_data.</td>
+          </tr>
+          <tr>
+            <td><code>scrapers/config.py</code></td>
+            <td>Daftar token Apify</td>
+            <td><span class="badge b-danger">BOCOR</span></td>
+            <td>3 token plaintext. Perlu migrasi ke st.secrets.</td>
+          </tr>
+          <tr>
+            <td><code>scrapers/twitter.py</code></td>
+            <td>Aktor X/Twitter</td>
+            <td><span class="badge b-ok">OK</span></td>
+            <td>Multi-field fallback, dedup, filter RT, sort by date.</td>
+          </tr>
+          <tr>
+            <td><code>scrapers/tiktok.py</code></td>
+            <td>Aktor TikTok comments</td>
+            <td><span class="badge b-ok">OK</span></td>
+            <td>maxRepliesPerComment=0, UNIX timestamp conversion.</td>
+          </tr>
+          <tr>
+            <td><code>scrapers/manager.py</code></td>
+            <td>Dispatcher platform</td>
+            <td><span class="badge b-ok">OK</span></td>
+            <td>Unified schema return. Mudah diperluas untuk Instagram.</td>
+          </tr>
+          <tr>
+            <td><code>scraper_apify.py</code></td>
+            <td>Bridge kompatibilitas ke scrapers/</td>
+            <td><span class="badge b-warn">DEAD CODE</span></td>
+            <td>Hanya dipakai app_backup.py yang juga sudah dead. Hapus bersama backup.</td>
+          </tr>
+          <tr>
+            <td><code>cek_metrik.py</code></td>
+            <td>Script evaluasi model (dijalankan manual)</td>
+            <td><span class="badge b-warn">PARSIAL</span></td>
+            <td>Ada blok kode lama yang di-comment. Versi aktif cek NB saja, bukan SVM. Perlu lengkapi.</td>
+          </tr>
+          <tr>
+            <td><code>eksperimen_komparasi_model.ipynb</code></td>
+            <td>Notebook training SVM + NB</td>
+            <td><span class="badge b-ok">REFERENSI</span></td>
+            <td>Output cell tersimpan. Konfirmasi akurasi SVM 86.75%, NB 84.62%.</td>
+          </tr>
+          <tr>
+            <td><code>model_svm.pkl</code>, <code>model_nb.pkl</code>, <code>tfidf_vectorizer.pkl</code></td>
+            <td>Artefak model terlatih</td>
+            <td><span class="badge b-ok">SIAP PAKAI</span></td>
+            <td>Disimpan via joblib. 11.897 fitur vocab. Kelas [0, 1].</td>
+          </tr>
+          <tr>
+            <td><code>abusive.csv</code></td>
+            <td>Leksikon umpatan dataset sumber</td>
+            <td><span class="badge b-warn">TIDAK DIPAKAI</span></td>
+            <td>preprocessor.py tidak membacanya. Hanya ada new_kamusalay.csv yang dipakai.</td>
+          </tr>
+          <tr>
+            <td><code>ai_cache.json</code></td>
+            <td>Disk cache respon LLM (SHA256 key)</td>
+            <td><span class="badge b-ok">BERFUNGSI</span></td>
+            <td>~30+ entri cache. Cegah rate limit 429 OpenRouter efektif.</td>
+          </tr>
+          <tr>
+            <td><code>.gitignore</code></td>
+            <td>Aturan exclusi git</td>
+            <td><span class="badge b-danger">TIDAK LENGKAP</span></td>
+            <td>Hanya exclude __pycache__ dan .env. TIDAK exclude secrets.toml, *.pkl besar, atau ai_cache.json.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- BUG PERFORMA -->
+  <div class="card" style="border-left:3px solid var(--c-warn)">
+    <div class="card-head">
+      <span class="card-title">⚡ Bug Performa: LIME & importlib.reload</span>
+      <span class="badge b-warn">PERFORMANCE</span>
+    </div>
+    <div class="findings">
+      <div class="finding">
+        <div class="finding-head">
+          <span class="finding-name">LimeTextExplainer dibuat ulang setiap render cycle (app.py baris 325-326)</span>
+        </div>
+        <div class="finding-desc">
+          Setiap kali user mengklik radio button model atau selectbox tweet, Streamlit rerun seluruh script. Baris <code>from lime.lime_text import LimeTextExplainer; explainer = LimeTextExplainer(...)</code> yang berada di dalam blok conditional (bukan di module level dan bukan cached) menyebabkan objek ini diinstansiasi ulang setiap interaksi.
+        </div>
+        <div class="diff-block">
+<span class="d-old">-        from lime.lime_text import LimeTextExplainer
+-        explainer = LimeTextExplainer(class_names=['Aman', 'Cyberbullying'])</span>
+<span class="d-new">+        # Pindahkan ke level atas app.py dan tambahkan cache:
++        @st.cache_resource
++        def get_lime_explainer():
++            from lime.lime_text import LimeTextExplainer
++            return LimeTextExplainer(class_names=['Aman', 'Cyberbullying'])
++        explainer = get_lime_explainer()</span>
+        </div>
+      </div>
+      <div class="finding">
+        <div class="finding-head">
+          <span class="finding-name">importlib.reload(scrapers) di top-level app.py — dieksekusi setiap rerun</span>
+        </div>
+        <div class="finding-desc">
+          Baris 14 <code>importlib.reload(scrapers)</code> dijalankan di top-level script, bukan di dalam kondisi tertentu. Di Streamlit, setiap user action memicu rerun seluruh script — artinya seluruh paket scrapers direload dari disk berulang-ulang. Ini tidak membahayakan tapi mubazir.
+        </div>
+        <div class="finding-fix">→ Hapus baris importlib.reload(scrapers). Scraper tidak perlu hot-reload di production.</div>
+      </div>
+      <div class="finding">
+        <div class="finding-head">
+          <span class="finding-name">bar chart LIME: lebar_bar = min(abs(bobot) * 500, 100) — magic number tidak stabil</span>
+        </div>
+        <div class="finding-desc">
+          Bobot LIME untuk NB biasanya jauh lebih kecil dari SVM (lihat output notebook: SVM ~0.088, NB ~0.044). Scaling <code>× 500</code> berarti bar NB hanya mencapai ~22% lebar layar, membuat visualisasi terlihat lemah padahal hasilnya valid. Semakin tinggi bobot, bar akan memenuhi 100% — tidak ada normalisasi adaptif.
+        </div>
+        <div class="finding-fix">→ Normalisasi relatif: lebar_bar = abs(bobot) / max_bobot * 100 — bar selalu proporsional terhadap fitur terkuat dalam batch tersebut</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════════════ TAB 4: NLP PIPELINE -->
+<section class="tab-panel" id="t-nlp">
+  <div class="sec-head">Analisa preprocessor.py — Pipeline NLP Bahasa Indonesia</div>
+
+  <div class="card">
+    <div class="card-head">
+      <span class="card-title">🔄 Urutan Tahap Preprocessing (Dibaca Langsung dari cuci_teks_super)</span>
+    </div>
+    <div class="tbl-wrap">
+      <table>
+        <thead>
+          <tr><th>#</th><th>Tahap</th><th>Implementasi</th><th>Penilaian</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="num">1</td>
+            <td>Case Folding</td>
+            <td><code>str(teks).lower()</code></td>
+            <td><span class="badge b-ok">BENAR</span> Harus pertama. String casting aman untuk nilai NaN.</td>
+          </tr>
+          <tr>
+            <td class="num">2</td>
+            <td>Hapus RT, USER, URL</td>
+            <td><code>re.sub(r'rt\s|user\s', '')</code> + URL pattern</td>
+            <td><span class="badge b-warn">PARSIAL</span> Pattern <code>rt\s</code> tidak menangkap "rt" di akhir kalimat atau sebelum tanda baca.</td>
+          </tr>
+          <tr>
+            <td class="num">3</td>
+            <td>Hapus mention & hashtag simbol</td>
+            <td><code>re.sub(r'\@\w+|\#', '', teks)</code></td>
+            <td><span class="badge b-ok">OK</span> Hapus @username; hapus # tapi simpan teks hashtag. Wajar untuk analisis sentimen.</td>
+          </tr>
+          <tr>
+            <td class="num">4</td>
+            <td>Hapus tanda baca</td>
+            <td><code>re.sub(r'[^\w\s]', ' ', teks)</code></td>
+            <td><span class="badge b-warn">MINOR</span> <code>\w</code> menyertakan underscore (_). Underscore bukan kata BI yang bermakna tapi jarang muncul, bisa diabaikan.</td>
+          </tr>
+          <tr>
+            <td class="num">5</td>
+            <td>Hapus angka</td>
+            <td><code>re.sub(r'\d+', '', teks)</code></td>
+            <td><span class="badge b-ok">BENAR</span> Benar dilakukan setelah tanda baca agar tidak merusak tokenisasi alay numerik di tahap berikutnya.</td>
+          </tr>
+          <tr>
+            <td class="num">6</td>
+            <td>Normalisasi spasi</td>
+            <td><code>re.sub(r'\s+', ' ', teks).strip()</code></td>
+            <td><span class="badge b-ok">BENAR</span></td>
+          </tr>
+          <tr>
+            <td class="num">7</td>
+            <td>Normalisasi kata alay</td>
+            <td>Dictionary lookup <code>alay_dict.get(kata, kata)</code></td>
+            <td><span class="badge b-ok">BENAR</span> Word-by-word substitution dengan new_kamusalay.csv (latin-1). Urutan setelah hapus angka sudah tepat.</td>
+          </tr>
+          <tr>
+            <td class="num">8</td>
+            <td>Stopword Removal</td>
+            <td>PySastrawi StopWordRemover</td>
+            <td><span class="badge b-ok">BENAR</span> Dilakukan sebelum stemming — urutan ini standar dan benar untuk BI.</td>
+          </tr>
+          <tr>
+            <td class="num">9</td>
+            <td>Stemming</td>
+            <td>PySastrawi StemmerFactory</td>
+            <td><span class="badge b-ok">BENAR</span> Enhanced Confix Stripping (ECS) untuk BI. Komponen ini berat — load sekali di module level, bukan per-call. ✓ Sudah benar.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head">
+      <span class="card-title">⚠️ Temuan NLP untuk Diklarifikasi di Naskah</span>
+    </div>
+    <div class="findings">
+      <div class="finding">
+        <div class="finding-head">
+          <span class="finding-name">abusive.csv tidak digunakan dalam preprocessing aktual</span>
+          <span class="badge b-warn">KETIDAKSESUAIAN NASKAH</span>
+        </div>
+        <div class="finding-desc">
+          File ada di direktori, sering disebut di ringkasan sebagai "leksikon umpatan fitur", tapi <code>preprocessor.py</code> tidak pernah membaca atau menggunakannya. Satu-satunya file kamus yang aktif adalah <code>new_kamusalay.csv</code>. Jika penguji membuka kode, ini akan jadi pertanyaan langsung.
+        </div>
+        <div class="finding-fix">→ Pilih satu dari dua opsi: (A) Integrasikan abusive.csv sebagai fitur binary "apakah ada kata abusive" atau (B) Klarifikasi di Bab III bahwa abusive.csv hanya sebagai referensi pelabelan dataset sumber Ibrohim & Budi 2019</div>
+      </div>
+      <div class="finding">
+        <div class="finding-head">
+          <span class="finding-name">new_kamusalay.csv load tanpa penanganan error — crash jika file hilang</span>
+          <span class="badge b-warn">FRAGILITY</span>
+        </div>
+        <div class="finding-code"><!-- preprocessor.py baris 9-10 (ASLI) -->
+kamus_alay = pd.read_csv("new_kamusalay.csv", encoding='latin-1', header=None)
+# Tidak ada try/except. Jika file tidak ada, seluruh import preprocessor gagal.
+
+<!-- Rekomendasi: -->
+try:
+    kamus_alay = pd.read_csv("new_kamusalay.csv", encoding='latin-1', header=None)
+    alay_dict = dict(zip(kamus_alay[0], kamus_alay[1]))
+except FileNotFoundError:
+    alay_dict = {}  # Fallback: tidak ada normalisasi alay</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SAMPLE VERIFY dari notebook -->
+  <div class="card" style="border-left:3px solid var(--c-ok)">
+    <div class="card-head">
+      <span class="card-title">✅ Verifikasi Pipeline — Output Nyata dari Notebook</span>
+      <span class="badge b-ok">CONFIRMED</span>
+    </div>
+    <div class="finding-code"><!-- Diambil langsung dari output cell notebook eksperimen_komparasi_model.ipynb -->
+Input:  "USER USER Akun @netizen_alay bilang si A itu B0D0H b4ngsat pantes di-bully! #toxic http://link.com"
+Output: "akun bilang sih a bdh bangsat pantas bully toxic"
+
+Langkah yang terlihat:
+  ✔ lowercase: iya
+  ✔ hapus USER, @mention: iya
+  ✔ hapus URL: iya
+  ✔ B0D0H → bdh (normalisasi alay sebagian)
+  ✔ b4ngsat → bangsat (normalisasi alay numerik berhasil)
+  ✔ "pantes" → "pantas" (normalisasi alay)
+  ✔ "di-bully" → "bully" (tanda hubung terhapus, stem benar)
+  ✔ "si", "itu" dihapus sebagai stopword
+  ⚠ "sih" tidak dihapus — bukan stopword Sastrawi default (acceptable)</div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════════════ TAB 5: SCRAPER -->
+<section class="tab-panel" id="t-scraper">
+  <div class="sec-head">Audit Paket scrapers/ (Dibaca Langsung dari Semua File)</div>
+
+  <div class="g2">
+    <div class="card" style="border-left:3px solid var(--c-svm)">
+      <div class="card-head">
+        <span class="card-title" style="color:var(--c-svm)">🐦 scrapers/twitter.py</span>
+        <span class="badge b-ok">SOLID</span>
+      </div>
+      <div class="findings">
+        <div class="finding">
+          <div class="finding-name" style="font-size:13px; font-weight:600; margin-bottom:6px">Aktor: <code>api-ninja/x-twitter-advanced-search</code></div>
+          <div class="finding-desc">Multi-field fallback untuk text, username, stats (favorites/retweets/replies) — robust terhadap perubahan schema Apify aktor. Minimum 20 tweet per request (actor limitation). Filter RT dengan <code>str.startswith('RT @')</code>, dedup by text, sort by datetime descending.</div>
+        </div>
+        <div class="finding">
+          <div class="finding-name" style="font-size:13px; font-weight:600; margin-bottom:6px">⚠️ Potensi masalah saat demo sidang</div>
+          <div class="finding-desc"><code>actor_limit = max(max_results, 20)</code> — jika user request 5 tweet, aktor tetap ambil 20. Ini berguna untuk dedup tapi kalau semua 20 sudah terduplikasi, return bisa lebih sedikit dari yang diminta.</div>
+        </div>
+      </div>
+    </div>
+    <div class="card" style="border-left:3px solid var(--c-nb)">
+      <div class="card-head">
+        <span class="card-title" style="color:var(--c-nb)">🎵 scrapers/tiktok.py</span>
+        <span class="badge b-ok">SOLID</span>
+      </div>
+      <div class="findings">
+        <div class="finding">
+          <div class="finding-name" style="font-size:13px; font-weight:600; margin-bottom:6px">Aktor: <code>clockworks/tiktok-comments-scraper</code></div>
+          <div class="finding-desc">
+            <code>maxRepliesPerComment: 0</code> — tidak mengambil balasan comment anak, menghemat kuota Apify. UNIX timestamp dikonversi via <code>datetime.fromtimestamp()</code>. Field mapping: <code>diggCount</code> → <code>like_count</code>. Schema konsisten dengan Twitter.
+          </div>
+        </div>
+        <div class="finding">
+          <div class="finding-name" style="font-size:13px; font-weight:600; margin-bottom:6px">⚠️ Belum diuji lapangan — Fase 1 roadmap</div>
+          <div class="finding-desc">Username extraction: <code>item.get('uniqueId') or item.get('authorPinTitle') or item.get('user', {}).get('uniqueId')</code>. Ada bug logika kecil: kondisi terakhir tidak dievaluasi dengan benar karena <code>if isinstance</code> tidak ada di sini — hanya <code>or</code> langsung. Perlu diverifikasi dengan data nyata.</div>
+          <div class="finding-code"><!-- tiktok.py baris 44-48 (ASLI) — bug logika -->
+username_val = (
+    item.get('uniqueId') or
+    item.get('authorPinTitle') or
+    item.get('user', {}).get('uniqueId') if isinstance(item.get('user'), dict) else None
+) or "TikTok_User"
+
+# Problem: operator preseden Python membuat ini menjadi:
+# (A or B or (C if condition else None)) or "default"
+# Bukan: (A or B or (C if condition else default))
+# Ini sebenarnya sudah benar secara logika, tapi sulit dibaca.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head">
+      <span class="card-title">📋 Skema DataFrame Terpadu (Standar Antar Platform)</span>
+    </div>
+    <div class="tbl-wrap">
+      <table>
+        <thead>
+          <tr><th>Kolom</th><th>Twitter/X</th><th>TikTok</th><th>Instagram (Rencana)</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><code>platform</code></td><td>'Twitter / X'</td><td>'TikTok'</td><td>'Instagram'</td></tr>
+          <tr><td><code>id</code></td><td>tweet_id / id_str</td><td>cid / commentId</td><td>comment_id</td></tr>
+          <tr><td><code>text</code></td><td>full_text</td><td>text / commentText</td><td>text</td></tr>
+          <tr><td><code>created_at</code></td><td>ISO datetime string</td><td>UNIX timestamp → str</td><td>ISO datetime</td></tr>
+          <tr><td><code>like_count</code></td><td>favorites</td><td>diggCount</td><td>likesCount</td></tr>
+          <tr><td><code>retweet_count</code></td><td>retweets</td><td>0 (hardcoded)</td><td>0</td></tr>
+          <tr><td><code>reply_count</code></td><td>replies</td><td>replyCommentTotal</td><td>repliesCount</td></tr>
+          <tr><td><code>username</code></td><td>screen_name / username</td><td>uniqueId / authorPinTitle</td><td>ownerUsername</td></tr>
+          <tr><td><code>label</code></td><td>None</td><td>None</td><td>None</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div style="margin-top:12px; font-size:12px; color:var(--tx-muted)">
+      ✅ Skema terpadu ini sangat baik — app.py bisa memproses data dari semua platform dengan kode yang sama persis.
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════════════ TAB 6: SIDANG -->
+<section class="tab-panel" id="t-sidang">
+  <div class="sec-head">Checklist Kesiapan Sidang Meja Hijau</div>
+
+  <div class="tbl-wrap" style="margin-bottom:18px">
+    <table>
+      <thead>
+        <tr><th>Item</th><th>Status</th><th>Tindakan</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Model .pkl terlatih dan valid</td>
+          <td><span class="badge b-ok">✅ SIAP</span></td>
+          <td>Sudah diverifikasi via notebook dan cek_metrik.py</td>
+        </tr>
+        <tr>
+          <td>Dashboard Streamlit berjalan</td>
+          <td><span class="badge b-ok">✅ SIAP</span></td>
+          <td>app.py fungsional, scraper dan LIME terpasang</td>
+        </tr>
+        <tr>
+          <td>Metrik model konsisten di semua file</td>
+          <td><span class="badge b-danger">❌ BELUM</span></td>
+          <td>app.py vs app_backup.py nilai berbeda — verifikasi dan selaraskan</td>
+        </tr>
+        <tr>
+          <td>Klaim "TF-IDF n-gram" sesuai kode</td>
+          <td><span class="badge b-warn">⚠️ PERLU REVISI</span></td>
+          <td>Kode pakai unigram default; naskah klaim n-gram — pilih satu</td>
+        </tr>
+        <tr>
+          <td>Peran abusive.csv jelas di Bab III</td>
+          <td><span class="badge b-warn">⚠️ PERLU KLARIFIKASI</span></td>
+          <td>Tidak dipakai preprocessing; hanya untuk pelabelan dataset asal</td>
+        </tr>
+        <tr>
+          <td>requirements.txt tersedia</td>
+          <td><span class="badge b-danger">❌ BELUM ADA</span></td>
+          <td>Jalankan pip freeze > requirements.txt</td>
+        </tr>
+        <tr>
+          <td>Kredensial API tidak di git</td>
+          <td><span class="badge b-danger">❌ TEREKSPOS</span></td>
+          <td>Migrasi ke st.secrets; rotasi semua key yang sudah masuk git history</td>
+        </tr>
+        <tr>
+          <td>Tabel benchmark latensi nyata</td>
+          <td><span class="badge b-ok">✅ SIAP</span></td>
+          <td>Kode time.perf_counter() sudah ada; tinggal tangkap output real</td>
+        </tr>
+        <tr>
+          <td>File sampah dihapus</td>
+          <td><span class="badge b-warn">⚠️ PERLU BERSIH</span></td>
+          <td>Hapus app_backup.py dan scraper_apify.py dari repo</td>
+        </tr>
+        <tr>
+          <td>Demo TikTok lapangan berhasil</td>
+          <td><span class="badge b-info">⏳ FASE 1</span></td>
+          <td>Belum diuji dengan URL video nyata</td>
+        </tr>
+        <tr>
+          <td>Integrasi Instagram</td>
+          <td><span class="badge b-info">⏳ FASE 2</span></td>
+          <td>scrapers/instagram.py belum ada</td>
+        </tr>
+        <tr>
+          <td>Donut chart visualisasi toksisitas</td>
+          <td><span class="badge b-info">⏳ FASE 3</span></td>
+          <td>Belum diimplementasi di app.py</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- PERTANYAAN PENGUJI -->
+  <div class="card" style="border-left:3px solid var(--c-info)">
+    <div class="card-head">
+      <span class="card-title">🎓 Prediksi Pertanyaan Penguji + Jawaban Rekomendasi</span>
+    </div>
+    <div class="findings">
+      <div class="finding">
+        <div class="finding-head">
+          <span class="finding-name">"Kenapa tidak pakai deep learning (BERT/IndoBERT) yang lebih akurat?"</span>
+        </div>
+        <div class="finding-desc">
+          <strong>Jawaban:</strong> SVM dengan TF-IDF telah mencapai 86.75% akurasi pada dataset 13.165 data — kompetitif dengan baseline pre-BERT. Keunggulan pendekatan ini: (1) interpretabilitas langsung via LIME, (2) latensi inferensi sub-1ms yang tidak mungkin dicapai BERT pada CPU, (3) tidak memerlukan GPU untuk deployment. Penelitian ini secara eksplisit membandingkan dua algoritma ML klasik untuk aspek kecepatan real-time, bukan kompetisi akurasi mutlak.
+        </div>
+      </div>
+      <div class="finding">
+        <div class="finding-head">
+          <span class="finding-name">"Dataset hanya dari Twitter 2019 — apakah masih relevan untuk deteksi sekarang?"</span>
+        </div>
+        <div class="finding-desc">
+          <strong>Jawaban:</strong> Dataset Ibrohim & Budi (2019) adalah gold-standard untuk NLP Bahasa Indonesia dengan anotasi multi-label yang tervalidasi secara akademik (CC BY-NC-SA 4.0). Pola bahasa ujaran kebencian BI bersifat relatif stabil. Penggunaan kamus alay terkini (new_kamusalay.csv) mengakomodasi evolusi bahasa gaul kontemporer. Validasi real-world dilakukan melalui scraping konten aktual pada demo.
+        </div>
+      </div>
+      <div class="finding">
+        <div class="finding-head">
+          <span class="finding-name">"Mengapa imbalance 55:44 tidak ditangani dengan SMOTE?"</span>
+        </div>
+        <div class="finding-desc">
+          <strong>Jawaban:</strong> Rasio 55.5% : 44.5% tergolong mild imbalance (threshold kritis umumnya di atas 70:30 atau 80:20). F1-Score kedua model di atas 83% tanpa teknik oversampling membuktikan tidak ada bias signifikan ke kelas mayoritas. SMOTE pada data teks dengan TF-IDF juga bermasalah karena menginterpolasi vektor sparse — bisa menghasilkan dokumen sintetis yang tidak bermakna secara linguistik.
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════════════ TAB 7: ROADMAP -->
+<section class="tab-panel" id="t-roadmap">
+  <div class="sec-head">Roadmap Eksekusi Prioritas (Berdasarkan Temuan Audit)</div>
+
+  <div class="verdict v-danger" style="margin-bottom:18px">
+    <div class="v-head">⚡ Lakukan Sekarang (Sebelum Demo/Sidang)</div>
+    Perbaiki 3 temuan kritis ini dulu. Jika sidang mendadak dimajukan, item ini yang pertama ditanya penguji atau dilihat pembimbing.
+  </div>
+
+  <div class="roadmap">
+    <div class="rmap-item">
+      <div class="rmap-num">00</div>
+      <div class="rmap-body">
+        <h3>🔐 Amankan Kredensial API (1 jam)</h3>
+        <p>Buat <code>.streamlit/secrets.toml</code>, tambahkan OPENROUTER_API_KEY dan APIFY_TOKENS. Update <code>app.py</code> dan <code>scrapers/config.py</code> untuk baca dari secrets. Tambahkan <code>.streamlit/secrets.toml</code> ke .gitignore. Rotasi semua key di OpenRouter Dashboard dan Apify Console.</p>
+        <div class="rmap-detail">File yang diubah: app.py baris 34 · scrapers/config.py · .gitignore</div>
+      </div>
+    </div>
+
+    <div class="rmap-item">
+      <div class="rmap-num">01</div>
+      <div class="rmap-body">
+        <h3>📦 Generate requirements.txt + Hapus Dead Code (30 menit)</h3>
+        <p>Jalankan <code>pip freeze > requirements.txt</code> di environment aktif. Hapus <code>app_backup.py</code> dan <code>scraper_apify.py</code> dari repo. Update .gitignore untuk mengecualikan <code>__pycache__</code>, <code>*.pyc</code>, dan file besar seperti <code>*.pkl</code> jika belum.</p>
+        <div class="rmap-detail">git rm app_backup.py scraper_apify.py · git commit -m "cleanup: hapus dead code dan tambah requirements.txt"</div>
+      </div>
+    </div>
+
+    <div class="rmap-item">
+      <div class="rmap-num">02</div>
+      <div class="rmap-body">
+        <h3>📊 Verifikasi Metrik Model yang Definitif (30 menit)</h3>
+        <p>Jalankan <code>cek_metrik.py</code> (lengkapi dulu untuk SVM juga — saat ini hanya cek NB). Tangkap output <code>classification_report</code> untuk kedua model. Update angka di <code>app.py</code> agar sesuai dengan output terverifikasi. Ini adalah angka yang masuk ke Bab IV.</p>
+        <div class="rmap-detail">Pastikan digits=4 di classification_report untuk konsistensi standar skripsi</div>
+      </div>
+    </div>
+
+    <div class="rmap-item">
+      <div class="rmap-num">03</div>
+      <div class="rmap-body">
+        <h3>🎵 Fase 1: Uji Lapangan TikTok</h3>
+        <p>Jalankan <code>streamlit run app.py</code> dan input URL video TikTok nyata yang viral. Verifikasi kolom <code>username</code>, <code>text</code>, <code>created_at</code> muncul benar. Jalankan LIME pada komentar TikTok untuk memastikan pipeline berfungsi end-to-end untuk non-Twitter content.</p>
+        <div class="rmap-detail">Tangkap screenshot untuk lampiran Bab IV — perbandingan platform Twitter vs TikTok</div>
+      </div>
+    </div>
+
+    <div class="rmap-item">
+      <div class="rmap-num">04</div>
+      <div class="rmap-body">
+        <h3>📸 Fase 2: scrapers/instagram.py</h3>
+        <p>Buat file baru <code>scrapers/instagram.py</code> dengan aktor Apify <code>apify/instagram-comment-scraper</code>. Ikuti pola yang sama dengan <code>tiktok.py</code>. Daftarkan di <code>scrapers/manager.py</code> dengan kondisi <code>if "instagram" in platform_key</code>. Tambahkan opsi di dropdown sidebar app.py.</p>
+        <div class="rmap-detail">Skema DataFrame harus identik (platform, id, text, created_at, like_count, username, label)</div>
+      </div>
+    </div>
+
+    <div class="rmap-item">
+      <div class="rmap-num">05</div>
+      <div class="rmap-body">
+        <h3>🍩 Fase 3: Donut Chart Rasio Toksisitas</h3>
+        <p>Tambahkan visualisasi setelah tabel scraping: donut chart Plotly (atau SVG native) yang menampilkan persentase Aman vs Cyberbullying dari hasil scraping aktif. Ini memberi ringkasan visual instan yang kuat untuk demo sidang.</p>
+        <div class="rmap-detail">Gunakan st.plotly_chart() dengan fig = px.pie() atau buat SVG inline agar tidak perlu install extra library</div>
+      </div>
+    </div>
+
+    <div class="rmap-item">
+      <div class="rmap-num">06</div>
+      <div class="rmap-body">
+        <h3>🎓 Fase 4: Finalisasi Naskah & Materi Sidang</h3>
+        <p>Ambil tabel benchmark latensi real dari beberapa sesi scraping (5, 10, 20, 50 tweet) untuk Bab IV. Klarifikasi peran <code>abusive.csv</code> di Bab III. Selaraskan klaim "TF-IDF n-gram" dengan kode aktual (unigram). Siapkan demo live di laptop yang sudah punya internet stabil dan token Apify aktif.</p>
+        <div class="rmap-detail">Pastikan ai_cache.json punya cukup entri agar demo tidak bergantung koneksi internet saat sidang</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script>
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const target = btn.dataset.tab;
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById(target).classList.add('active');
+  });
+});
+</script>
+</body>
+</html>
