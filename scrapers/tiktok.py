@@ -19,14 +19,15 @@ def _parse_tiktok_item(item: dict) -> dict:
     username_val = (
         item.get('uniqueId') or
         item.get('authorPinTitle') or
-        (user_info.get('uniqueId') if isinstance(user_info, dict) else None) or
+        (user_info.get('nickName') if isinstance(user_info, dict) else None) or
         (user_info.get('name') if isinstance(user_info, dict) else None) or
+        (user_info.get('uniqueId') if isinstance(user_info, dict) else None) or
         item.get('author_name') or
         "TikTok_User"
     )
 
     # Konversi timestamp UNIX jika ada
-    raw_time = item.get('createTime') or item.get('createdAt')
+    raw_time = item.get('createTimeISO') or item.get('createTime') or item.get('createdAt')
     if isinstance(raw_time, (int, float)):
         try:
             created_str = datetime.fromtimestamp(raw_time).strftime('%Y-%m-%d %H:%M:%S')
@@ -50,7 +51,7 @@ def _parse_tiktok_item(item: dict) -> dict:
         'created_at': created_str,
         'like_count': int(like_count),
         'retweet_count': 0,
-        'reply_count': int(item.get('replyCommentTotal') or item.get('reply_count') or 0),
+        'reply_count': int(item.get('replyCommentTotal') or item.get('reply_count') or item.get('commentCount') or 0),
         'username': str(username_val),
         'label': None
     }
@@ -59,15 +60,15 @@ def _parse_tiktok_item(item: dict) -> dict:
 def scrape_tiktok(target: str = "", video_url: str = "", max_results: int = 10) -> pd.DataFrame:
     """
     Mengeruk data TikTok via Apify SDK.
-    - Jika URL video: menggunakan 'clockworks/tiktok-comments-scraper' untuk menarik komentar video tersebut.
-    - Jika Kata Kunci / Profil: menggunakan 'clockworks/tiktok-scraper' dengan limit dinamis (minimal 20 data).
+    - Jika URL video: menggunakan 'clockworks/tiktok-comments-scraper' untuk menarik komentar video.
+    - Jika Kata Kunci: menggunakan 'clockworks/tiktok-scraper' (tanpa recursive comments agar cepat & hemat kuota).
     """
     input_str = (target or video_url).strip()
     if not input_str:
         return pd.DataFrame()
 
     is_url = "tiktok.com" in input_str or input_str.startswith("http")
-    actor_limit = max(max_results, 20)
+    actor_limit = min(max(max_results, 5), 20)
     last_error = None
 
     for token in APIFY_TOKENS:
@@ -90,8 +91,7 @@ def scrape_tiktok(target: str = "", video_url: str = "", max_results: int = 10) 
                 run_input = {
                     "profiles": [input_str.lstrip("@")],
                     "resultsPerPage": actor_limit,
-                    "shouldDownloadComments": True,
-                    "commentsPerPost": 10
+                    "shouldDownloadComments": False
                 }
                 mode_desc = f"Profil TikTok: '{input_str}'"
             else:
@@ -99,8 +99,7 @@ def scrape_tiktok(target: str = "", video_url: str = "", max_results: int = 10) 
                 run_input = {
                     "searchQueries": [input_str],
                     "resultsPerPage": actor_limit,
-                    "shouldDownloadComments": True,
-                    "commentsPerPost": 10
+                    "shouldDownloadComments": False
                 }
                 mode_desc = f"Kata Kunci: '{input_str}'"
 
@@ -109,6 +108,10 @@ def scrape_tiktok(target: str = "", video_url: str = "", max_results: int = 10) 
             records = []
 
             for item in client.dataset(run.default_dataset_id).iterate_items():
+                # Lewati respons error dari actor (misal post not found)
+                if item.get('error') or item.get('errorCode'):
+                    continue
+
                 # 1. Cek jika item menyertakan daftar komentar di dalamnya
                 nested = item.get('comments')
                 if isinstance(nested, list) and len(nested) > 0:

@@ -283,13 +283,28 @@ html, body, [class*="css"] {
 CACHE_FILE = Path("ai_cache.json")
 
 OPENROUTER_API_KEY = ""
-if hasattr(st, "secrets") and "OPENROUTER_API_KEY" in st.secrets:
-    OPENROUTER_API_KEY = st.secrets["OPENROUTER_API_KEY"]
-else:
+try:
+    if hasattr(st, "secrets") and "OPENROUTER_API_KEY" in st.secrets:
+        OPENROUTER_API_KEY = st.secrets["OPENROUTER_API_KEY"]
+except Exception:
+    pass
+
+if not OPENROUTER_API_KEY:
+    _sec_file = Path(__file__).resolve().parent / ".streamlit" / "secrets.toml"
+    if _sec_file.exists():
+        try:
+            import tomllib
+            with open(_sec_file, "rb") as _f:
+                _sec_data = tomllib.load(_f)
+                OPENROUTER_API_KEY = _sec_data.get("OPENROUTER_API_KEY", "")
+        except Exception:
+            pass
+
+if not OPENROUTER_API_KEY:
     OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY", "")
 
 MODEL_NAME = "openrouter/free"
-FALLBACK_MODEL = "liquid/lfm-2.5-2.6b:free"
+FALLBACK_MODEL = "inclusionai/ling-3.2-flash:free"
 
 def muat_cache_disk_lokal() -> dict:
     if CACHE_FILE.exists():
